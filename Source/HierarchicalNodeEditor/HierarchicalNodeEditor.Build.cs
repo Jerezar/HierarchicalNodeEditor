@@ -40,7 +40,6 @@ public class HierarchicalNodeEditor : ModuleRules
 				"SlateCore",
                 "GunfireRuntime",
                 "Remnant",
-                "HierarchicalNodeEditorRuntime",
 				"AssetTools",
 				"UnrealEd"
 				// ... add private dependencies that you statically link with here ...	
