@@ -38,6 +38,11 @@ public class HierarchicalNodeEditor : ModuleRules
 				"Engine",
 				"Slate",
 				"SlateCore",
+                "GunfireRuntime",
+                "Remnant",
+                "HierarchicalNodeEditorRuntime",
+				"AssetTools",
+				"UnrealEd"
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);
@@ -47,7 +52,8 @@ public class HierarchicalNodeEditor : ModuleRules
 			new string[]
 			{
 				// ... add any modules that your module loads dynamically here ...
-			}
+				"ClassViewer"
+            }
 			);
 	}
 }

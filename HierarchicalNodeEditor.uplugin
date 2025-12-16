@@ -17,6 +17,11 @@
 	"Modules": [
 		{
 			"Name": "HierarchicalNodeEditor",
+			"Type": "Editor",
+			"LoadingPhase": "Default"
+		},
+		{
+			"Name": "HierarchicalNodeEditorRuntime",
 			"Type": "Runtime",
 			"LoadingPhase": "Default"
 		}
