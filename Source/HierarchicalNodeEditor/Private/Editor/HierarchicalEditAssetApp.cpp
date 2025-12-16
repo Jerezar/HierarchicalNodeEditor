@@ -1,8 +1,8 @@
 // Copyright Gunfire Games, LLC. All Rights Reserved.
 
 
-#include "HierarchicalEditAssetApp.h"
-#include "HierarchicalEditorAppMode.h"
+#include "Editor/HierarchicalEditAssetApp.h"
+#include "Editor/HierarchicalEditorAppMode.h"
 
 void FHierarchicalEditAssetApp::RegisterTabSpawners(const TSharedRef<class FTabManager>& TabManager)
 {

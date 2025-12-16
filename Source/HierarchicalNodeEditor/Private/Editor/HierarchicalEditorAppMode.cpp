@@ -1,6 +1,6 @@
-#include "HierarchicalEditorAppMode.h"
-#include "HierarchicalEditAssetApp.h"
-#include "HierachicalGraphTabFactory.h"
+#include "Editor/HierarchicalEditorAppMode.h"
+#include "Editor/HierarchicalEditAssetApp.h"
+#include "Editor/HierachicalGraphTabFactory.h"
 
 FHierarchicalEditorAppMode::FHierarchicalEditorAppMode(TSharedPtr<class FHierarchicalEditAssetApp> App): FApplicationMode(ModeIdentifier)
 {

@@ -1,7 +1,7 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "HierarchicalNodeEditor.h"
-#include "HierarchicalEditAssetAction.h"
+#include "TypeAction/HierarchicalEditAssetAction.h"
 #include "IAssetTools.h"
 #include "AssetToolsModule.h"
 

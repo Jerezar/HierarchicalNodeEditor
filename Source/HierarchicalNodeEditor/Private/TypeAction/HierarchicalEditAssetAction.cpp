@@ -3,7 +3,7 @@
 
 #include "HierarchicalEditAssetAction.h"
 #include "HierarchicalEditAsset.h"
-#include "HierarchicalEditAssetApp.h"
+#include "Editor/HierarchicalEditAssetApp.h"
 
 FHierarchicalEditAssetAction::FHierarchicalEditAssetAction(EAssetTypeCategories::Type Category)
 {

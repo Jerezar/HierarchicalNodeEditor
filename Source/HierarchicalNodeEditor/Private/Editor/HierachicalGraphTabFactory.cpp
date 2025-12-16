@@ -1,8 +1,8 @@
 // Copyright Gunfire Games, LLC. All Rights Reserved.
 
 
-#include "HierachicalGraphTabFactory.h"
-#include "HierarchicalEditAssetApp.h"
+#include "Editor/HierachicalGraphTabFactory.h"
+#include "Editor/HierarchicalEditAssetApp.h"
 
 FHierachicalGraphTabFactory::FHierachicalGraphTabFactory(TSharedPtr<class FHierarchicalEditAssetApp> App) : FWorkflowTabFactory(CustomTabIdentifier, App)
 {

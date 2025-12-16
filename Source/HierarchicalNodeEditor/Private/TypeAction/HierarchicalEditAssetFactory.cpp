@@ -1,7 +1,7 @@
 // Copyright Gunfire Games, LLC. All Rights Reserved.
 
 
-#include "HierarchicalEditAssetFactory.h"
+#include "TypeAction/HierarchicalEditAssetFactory.h"
 #include "HierarchicalEditAsset.h"
 #include "ClassViewerFilter.h"
 #include "HierarchicalEditInterface.h"
