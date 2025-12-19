@@ -4,6 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "WorkflowOrientedApp/WorkflowCentricApplication.h"
+#include "SGraphPanel.h"
+#include "HierarchicalEditAsset.h"
 
 /**
  * 
@@ -23,7 +25,27 @@ public: //FAssetEditorToolkit
 	virtual void OnToolkitHostingFinished(const TSharedRef< IToolkit >& Toolkit) override {}
 
 public:
+	UHierarchicalEditAsset* GetWorkingAsset() { return WorkingAsset; }
+	class UEdGraph* GetWorkingGraph() { return WorkingAsset->WorkingGraph; }
+
+	void SetWorkingGraphUI(TSharedPtr<SGraphEditor> WorkingGraphUI) { _WorkingGraphUI = WorkingGraphUI; }
+	void SetNodeDetailsView(TSharedPtr<class IDetailsView> NodeDetailsView);
+	void OnGraphSelectionChanged(const FGraphPanelSelectionSet& Selection);
+
+protected:
+	void DeleteGraphAction();
+	bool CanDeleteGraphAction();
+
+public:
 	static const FName CustomAppIdentifier;
+
+private:
+	UPROPERTY()
+	UHierarchicalEditAsset* WorkingAsset = nullptr;
+
+
+	TSharedPtr<SGraphEditor> _WorkingGraphUI = nullptr;
+	TSharedPtr<class IDetailsView> _NodeDetailsView = nullptr;
 };
 
 const FName FHierarchicalEditAssetApp::CustomAppIdentifier = FName(TEXT("HierarchicalEditAssetEditor"));

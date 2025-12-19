@@ -41,8 +41,9 @@ public class HierarchicalNodeEditor : ModuleRules
                 "GunfireRuntime",
                 "Remnant",
 				"AssetTools",
-				"UnrealEd"
-				// ... add private dependencies that you statically link with here ...	
+				"UnrealEd",
+				"ToolMenus",
+				"PropertyEditor"
 			}
 			);
 		

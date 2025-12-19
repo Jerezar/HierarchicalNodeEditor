@@ -6,6 +6,9 @@
 #include "ClassViewerFilter.h"
 #include "HierarchicalEditInterface.h"
 #include "Kismet2/SClassPickerDialog.h"
+#include "BlueprintEditorUtils.h"
+#include "Graph/HierarchicalNodeGraph.h"
+#include "Graph/HierarchicalRootNode.h"
 
 // Filter class for things which implement a particular interface
 // Copied from "/Engine/Plugins/Chooser/Source/ChooserEditor/Public/ObjectChooserClassFilter.h"
@@ -36,7 +39,27 @@ UHierarchicalEditAssetFactory::UHierarchicalEditAssetFactory(const FObjectInitia
 UObject* UHierarchicalEditAssetFactory::FactoryCreateNew(UClass* InClass, UObject* InParent, FName Name, EObjectFlags Flags, UObject* Context, FFeedbackContext* Warn)
 {
 	UHierarchicalEditAsset* Asset = NewObject< UHierarchicalEditAsset >(InParent, Name, Flags);
-	Asset->InnerClass = AssetClass;
+
+	UEdGraph* Graph = FBlueprintEditorUtils::CreateNewGraph(
+		Asset,
+		NAME_None,
+		UEdGraph::StaticClass(),
+		UHierarchicalGraphSchema::StaticClass()
+	);
+
+	Asset->WorkingGraph = Graph;
+
+	UHierarchicalRootNode* Result = NewObject< UHierarchicalRootNode >(Graph);
+
+	Result->NodePosX = 0;
+	Result->NodePosY = 0;
+
+	Graph->Modify();
+	Graph->AddNode(Result, true, true);
+
+	Result->InnerClass = AssetClass;
+	Result->InitializeHierarchicalNode();
+
 	return Asset;
 }
 

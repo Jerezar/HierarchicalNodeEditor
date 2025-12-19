@@ -9,5 +9,6 @@ class HIERARCHICALNODEEDITOR_API UHierarchicalEditAsset : public UObject
 	GENERATED_BODY()
 
 public:
-	UClass* InnerClass;
+	UPROPERTY()
+	class UEdGraph* WorkingGraph;
 };

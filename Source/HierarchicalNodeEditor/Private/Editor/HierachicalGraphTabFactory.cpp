@@ -3,6 +3,9 @@
 
 #include "Editor/HierachicalGraphTabFactory.h"
 #include "Editor/HierarchicalEditAssetApp.h"
+#include "GraphEditor.h"
+#include "BlueprintEditorUtils.h"
+#include "Kismet2/KismetEditorUtilities.h"
 
 FHierachicalGraphTabFactory::FHierachicalGraphTabFactory(TSharedPtr<class FHierarchicalEditAssetApp> App) : FWorkflowTabFactory(CustomTabIdentifier, App)
 {
@@ -14,7 +17,25 @@ FHierachicalGraphTabFactory::FHierachicalGraphTabFactory(TSharedPtr<class FHiera
 
 TSharedRef<SWidget> FHierachicalGraphTabFactory::CreateTabBody(const FWorkflowTabSpawnInfo& Info) const
 {
-	return SNew(STextBlock).Text(FText::FromString(TEXT("A placeholder for the graph view")));
+	TSharedPtr<class FHierarchicalEditAssetApp> App = _App.Pin();
+
+	SGraphEditor::FGraphEditorEvents GraphEvents;
+	GraphEvents.OnSelectionChanged.BindRaw(App.Get(), &FHierarchicalEditAssetApp::OnGraphSelectionChanged);
+
+	TSharedPtr <SGraphEditor> GraphEditorUI = SNew(SGraphEditor)
+		.IsEditable(true)
+		.GraphEvents(GraphEvents)
+		.GraphToEdit(App->GetWorkingGraph());
+
+	App->SetWorkingGraphUI(GraphEditorUI);
+
+	return SNew(SVerticalBox)
+		+ SVerticalBox::Slot()
+		.FillHeight(1)
+		.HAlign(HAlign_Fill)
+		[
+			GraphEditorUI.ToSharedRef()
+		];
 }
 
 FText FHierachicalGraphTabFactory::GetTabToolTipText(const FWorkflowTabSpawnInfo& Info) const
