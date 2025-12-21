@@ -25,40 +25,32 @@ void UHierarchicalNode_Base::InitializeHierarchicalNode()
 void UHierarchicalNode_Base::SetUpOutputPins()
 {
 
-	for (TFieldIterator<FArrayProperty> PropIterator(InnerClass); PropIterator; ++PropIterator) {
+	for (TFieldIterator<FProperty> PropIterator(InnerClass); PropIterator; ++PropIterator) {
 
+		UE_LOG(LogTemp, Warning, TEXT("Checking %s"), *(PropIterator->GetName()))
 
-		FObjectPropertyBase* InnerAsObjectProperty = Cast<FObjectPropertyBase>(PropIterator->Inner);
-		FStructProperty* InnerAsStructProperty = Cast<FStructProperty>(PropIterator->Inner);
-		//FOptionalProperty* InnerAsOptionalProperty = Cast<FOptionalProperty>(PropIterator->Inner);
+		bool bIsArrayField = false;
+		FProperty* TestProperty = *PropIterator;
 
-
-		UE_LOG(LogTemp, Warning, TEXT("Array property: %s; inner: %s"), *(PropIterator->GetName()), *(PropIterator->Inner->GetCPPType()))
-
-		UE_LOG(LogTemp, Warning, TEXT("bInnerExists: %d; bInnerIsObject: %d; bInnerIsStruct: %d"), !(PropIterator->Inner == nullptr), !(InnerAsObjectProperty == nullptr), !(InnerAsStructProperty == nullptr))
-
-		if (InnerAsObjectProperty == nullptr) continue;
-
-		if (InnerAsObjectProperty->PropertyClass->ImplementsInterface(UHierarchicalEditInterface::StaticClass())) {
-
-			FEdGraphPinType PinType;
-			PinType.PinSubCategory = UHierarchicalGraphSchema::SC_ChildNodeArray;
-			PinType.PinSubCategoryObject = InnerAsObjectProperty->PropertyClass;
-
-			this->CreatePin(
-				EGPD_Output,
-				PinType,
-				PropIterator->GetName()
-			);
+		FArrayProperty* TestArray = CastField<FArrayProperty>(*PropIterator);
+		if (TestArray != nullptr) {
+			UE_LOG(LogTemp, Warning, TEXT("%s is ArrayProperty."), *(PropIterator->GetName()))
+			TestProperty = TestArray->Inner;
+			bIsArrayField = true;
 		}
-	}
 
-	for (TFieldIterator<FObjectProperty> PropIterator(InnerClass); PropIterator; ++PropIterator) {
-		if (PropIterator->PropertyClass->ImplementsInterface(UHierarchicalEditInterface::StaticClass())) {
+		FObjectPropertyBase* TestObjectProperty = CastField<FObjectPropertyBase>(TestProperty);
+
+		if (TestObjectProperty == nullptr) continue;
+
+		UE_LOG(LogTemp, Warning, TEXT("%s is ObjectProperty."), *(PropIterator->GetName()))
+
+		if (TestObjectProperty->PropertyClass->ImplementsInterface(UHierarchicalEditInterface::StaticClass())) {
 
 			FEdGraphPinType PinType;
 			PinType.PinSubCategory = UHierarchicalGraphSchema::SC_ChildNode;
-			PinType.PinSubCategoryObject = PropIterator->PropertyClass;
+			PinType.ContainerType = bIsArrayField ? EPinContainerType::Array : EPinContainerType::None;
+			PinType.PinSubCategoryObject = TestObjectProperty->PropertyClass;
 
 			this->CreatePin(
 				EGPD_Output,

@@ -1,0 +1,12 @@
+#pragma once
+
+#include "HierarchicalChildNode.h"
+#include "HierarchicalTransitionNode.generated.h"
+
+UCLASS()
+class UHierarchicalTransitionNode : public UHierarchicalChildNode {
+	GENERATED_BODY()
+
+public:
+	virtual void SetUpOutputPins() override;
+};

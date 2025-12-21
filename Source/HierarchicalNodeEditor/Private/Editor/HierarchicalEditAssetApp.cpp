@@ -46,8 +46,6 @@ void FHierarchicalEditAssetApp::OnGraphSelectionChanged(const FGraphPanelSelecti
 {
 	TArray<UHierarchicalNode_Base*> SelectedNodes;
 
-	UE_LOG(LogTemp, Warning, TEXT("Changed graph selection"))
-
 	for (UObject* SelectedObject : Selection) {
 		UHierarchicalNode_Base* SelectionAsNode = Cast< UHierarchicalNode_Base>(SelectedObject);
 		if (SelectionAsNode != nullptr) {
@@ -68,8 +66,10 @@ void FHierarchicalEditAssetApp::DeleteGraphAction()
 	UEdGraph* Graph = GetWorkingGraph();
 	Graph->Modify();
 
+	UE_LOG(LogTemp, Warning, TEXT("Deleting Graph nodes"))
+
 	for (UEdGraphNode* Node : Graph->Nodes) {
-		if (Node->IsSelected() && Node->CanUserDeleteNode()) {
+		if (Node->IsSelected()) {
 			Graph->RemoveNode(Node);
 		}
 	}

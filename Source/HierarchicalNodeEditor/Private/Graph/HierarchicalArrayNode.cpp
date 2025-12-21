@@ -30,9 +30,8 @@ void UHierarchicalArrayNode::InitializeArrayNode()
 {
 	this->CreateNewGuid();
 
-	FEdGraphPinType InputType;
-	InputType.PinSubCategory = UHierarchicalGraphSchema::SC_ChildNodeArray;
-	InputType.PinSubCategoryObject = InnerClass;
+	FEdGraphPinType InputType(PinTypeTemplate);
+	InputType.ContainerType = EPinContainerType::Array;
 
 	this->CreatePin(
 		EGPD_Input,
@@ -62,9 +61,8 @@ void UHierarchicalArrayNode::InitializeArrayNode()
 
 void UHierarchicalArrayNode::CreateOutputPin()
 {
-	FEdGraphPinType OutputType;
-	OutputType.PinSubCategory = UHierarchicalGraphSchema::SC_ChildNode;
-	OutputType.PinSubCategoryObject = InnerClass;
+	FEdGraphPinType OutputType(PinTypeTemplate);
+	OutputType.ContainerType = EPinContainerType::None;
 
 	this->CreatePin(
 		EGPD_Output,

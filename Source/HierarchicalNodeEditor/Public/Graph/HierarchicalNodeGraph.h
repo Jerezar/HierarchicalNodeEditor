@@ -16,12 +16,10 @@ public:
 
 public:
 	static const FName SC_ChildNode; //SubCategoryObject is the Class of the associated Object.
-	static const FName SC_ChildNodeArray; //SubCategoryObject is the Class of the associated Object.
 	static const FName SC_StateTransition; //SubCategoryObject should be some child Class of ActorState.
 };
 
 const FName UHierarchicalGraphSchema::SC_ChildNode = FName("ChildNode");
-const FName UHierarchicalGraphSchema::SC_ChildNodeArray = FName("ChildNodeArray");
 const FName UHierarchicalGraphSchema::SC_StateTransition = FName("StateTransition");
 
 
@@ -55,8 +53,4 @@ public:
 	}
 
 	virtual UEdGraphNode* PerformAction(UEdGraph* ParentGraph, UEdGraphPin* FromPin, const FVector2D Location, bool bSelectNewNode = true) override;
-
-public:
-	UPROPERTY()
-	UClass* InnerClass = nullptr;
 };

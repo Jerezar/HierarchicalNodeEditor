@@ -3,6 +3,10 @@
 #include "HierarchicalEditInterface.h"
 #include "HierarchicalChildNode.h"
 #include "HierarchicalArrayNode.h"
+#include "ActorState.h"
+#include "ActorStateTransition.h"
+#include "Graph/HierarchicalStateNode.h"
+#include "Graph/HierarchicalTransitionNode.h"
 
 void UHierarchicalGraphSchema::GetGraphContextActions(FGraphContextMenuBuilder& ContextMenuBuilder) const
 {
@@ -19,12 +23,12 @@ void UHierarchicalGraphSchema::GetGraphContextActions(FGraphContextMenuBuilder& 
 
 		PinObjectClass = Cast<UClass>(SubCategoryObject);
 
-		bIsArrayOutput = PinType.PinSubCategory == SC_ChildNodeArray && (ContextMenuBuilder.FromPin->Direction == EGPD_Output);
+		bIsArrayOutput = PinType.ContainerType == EPinContainerType::Array && (ContextMenuBuilder.FromPin->Direction == EGPD_Output);
 	}
 
 	for (TObjectIterator<UClass> ClassIterator; ClassIterator; ++ClassIterator)
 	{
-		if (ClassIterator->ImplementsInterface(UHierarchicalEditInterface::StaticClass()) && ClassIterator->HasAnyClassFlags(CLASS_Abstract) == false) {
+		if (ClassIterator->ImplementsInterface(UHierarchicalEditInterface::StaticClass()) && (ClassIterator->HasAnyClassFlags(CLASS_Abstract) == false)) {
 
 			if (PinObjectClass != nullptr && !ClassIterator->IsChildOf(PinObjectClass)) continue;
 
@@ -55,8 +59,6 @@ void UHierarchicalGraphSchema::GetGraphContextActions(FGraphContextMenuBuilder& 
 			)
 		);
 
-		NewArrayAction->InnerClass = PinObjectClass;
-
 		ContextMenuBuilder.AddAction(NewArrayAction);
 	}
 }
@@ -78,15 +80,22 @@ const FPinConnectionResponse UHierarchicalGraphSchema::CanCreateConnection(const
 	FEdGraphPinType PinTypeB = B->PinType;
 	UObject* SubCategoryObjectB = PinTypeB.PinSubCategoryObject.Get();
 
-	if (PinTypeA.PinSubCategory != PinTypeB.PinSubCategory) {
+	if (PinTypeA.PinSubCategory != PinTypeB.PinSubCategory || PinTypeA.ContainerType != PinTypeB.ContainerType) {
 		return FPinConnectionResponse(CONNECT_RESPONSE_DISALLOW, TEXT("Incompatible sockets."));
 	}
 
-	UClass* PinObjectClassA = Cast<UClass>(SubCategoryObjectA);
-	UClass* PinObjectClassB = Cast<UClass>(SubCategoryObjectB);
+	if ((PinTypeA.PinSubCategoryObject == nullptr) != (PinTypeB.PinSubCategoryObject == nullptr)) {
+		return FPinConnectionResponse(CONNECT_RESPONSE_DISALLOW, TEXT("Incompatible sockets."));
+	}
 
-	if ( (bPinAOutput && !(PinObjectClassB->IsChildOf(PinObjectClassA))) || (!bPinAOutput && !(PinObjectClassA->IsChildOf(PinObjectClassB)))) {
-		return FPinConnectionResponse(CONNECT_RESPONSE_DISALLOW, TEXT("Input pin must represent the same class as the connecting output pin, or a child class thereof."));
+	if (PinTypeA.PinSubCategoryObject != nullptr) {
+
+		UClass* PinObjectClassA = Cast<UClass>(SubCategoryObjectA);
+		UClass* PinObjectClassB = Cast<UClass>(SubCategoryObjectB);
+
+		if ((bPinAOutput && !(PinObjectClassB->IsChildOf(PinObjectClassA))) || (!bPinAOutput && !(PinObjectClassA->IsChildOf(PinObjectClassB)))) {
+			return FPinConnectionResponse(CONNECT_RESPONSE_DISALLOW, TEXT("Input pin must represent the same class as the connecting output pin, or a child class thereof."));
+		}
 	}
 	
 	ECanCreateConnectionResponse Break = (bPinAOutput ? CONNECT_RESPONSE_BREAK_OTHERS_A : CONNECT_RESPONSE_BREAK_OTHERS_B);
@@ -100,7 +109,19 @@ FNewChildNodeAction::FNewChildNodeAction()
 
 UEdGraphNode* FNewChildNodeAction::PerformAction(UEdGraph* ParentGraph, UEdGraphPin* FromPin, const FVector2D Location, bool bSelectNewNode)
 {
-	UHierarchicalChildNode* Result = NewObject< UHierarchicalChildNode >(ParentGraph);
+	UHierarchicalChildNode* Result = nullptr;
+	
+	if (InnerClass->IsChildOf(UActorState::StaticClass())) {
+
+		Result = NewObject< UHierarchicalStateNode >(ParentGraph);
+	}
+	else if (InnerClass->IsChildOf(UActorStateTransition::StaticClass())) {
+
+		Result = NewObject< UHierarchicalTransitionNode >(ParentGraph);
+	}
+	else {
+		Result = NewObject< UHierarchicalChildNode >(ParentGraph);
+	}
 
 	Result->NodePosX = Location.X;
 	Result->NodePosY = Location.Y;
@@ -133,7 +154,7 @@ UEdGraphNode* FNewArrayNodeAction::PerformAction(UEdGraph* ParentGraph, UEdGraph
 	ParentGraph->Modify();
 	ParentGraph->AddNode(Result, true, bSelectNewNode);
 
-	Result->InnerClass = InnerClass;
+	Result->PinTypeTemplate = FEdGraphPinType(FromPin->PinType);
 	Result->InitializeArrayNode();
 
 	if (FromPin != nullptr && FromPin->Direction == EGPD_Output) {
