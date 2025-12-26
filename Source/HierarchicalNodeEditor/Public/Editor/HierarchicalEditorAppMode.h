@@ -17,6 +17,10 @@ public: // FApplicationMode
 	virtual void PostActivateMode() override;
 
 public:
+	void ExtendToolbar();
+	void FillToolbar(FToolBarBuilder& ToolbarBuilder);
+
+public:
 	static const FName ModeIdentifier;
 
 private:

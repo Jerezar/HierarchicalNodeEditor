@@ -15,7 +15,8 @@ public:
 
 public:
 	void InitializeHierarchicalNode();
-	UObject* GetInnerObject() { return InnerObject; }
+	UObject* GetInnerObject() const { return InnerObject; }
+	virtual UObject* GetFinalizedAssetRecursive() const;
 
 protected:
 	virtual void SetUpInputPins() {};

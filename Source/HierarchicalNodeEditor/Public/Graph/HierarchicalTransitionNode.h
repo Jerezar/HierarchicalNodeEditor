@@ -9,4 +9,5 @@ class UHierarchicalTransitionNode : public UHierarchicalChildNode {
 
 public:
 	virtual void SetUpOutputPins() override;
+	UObject* GetFinalizedAssetRecursive() const override;
 };

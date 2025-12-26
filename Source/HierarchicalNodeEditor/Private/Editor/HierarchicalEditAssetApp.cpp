@@ -28,7 +28,11 @@ void FHierarchicalEditAssetApp::InitEditor(const EToolkitMode::Type Mode, const 
 		ObjectsToEdit
 	);
 
-	AddApplicationMode(FHierarchicalEditorAppMode::ModeIdentifier, MakeShareable(new FHierarchicalEditorAppMode(SharedThis(this))));
+	TSharedPtr< FHierarchicalEditorAppMode> AppMode = MakeShareable(new FHierarchicalEditorAppMode(SharedThis(this)));
+	AppMode->ExtendToolbar();
+
+
+	AddApplicationMode(FHierarchicalEditorAppMode::ModeIdentifier, AppMode.ToSharedRef());
 	SetCurrentMode(FHierarchicalEditorAppMode::ModeIdentifier);
 
 	ToolkitCommands->MapAction(FGenericCommands::Get().Delete,

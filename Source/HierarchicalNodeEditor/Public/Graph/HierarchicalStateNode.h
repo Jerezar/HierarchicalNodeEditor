@@ -8,6 +8,12 @@ class UHierarchicalStateNode : public UHierarchicalChildNode {
 	GENERATED_BODY()
 
 public:
+	virtual FText GetNodeTitle(ENodeTitleType::Type TitelType) const override;
+	virtual void OnRenameNode(const FString& NewName) override;
+	virtual bool GetCanRenameNode() const override { return true; }
+
+public:
 	virtual void SetUpInputPins() override;
 	virtual void SetUpOutputPins() override;
+	virtual UObject* GetFinalizedAssetRecursive() const override;
 };

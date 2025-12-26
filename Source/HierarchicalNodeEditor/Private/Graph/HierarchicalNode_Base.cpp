@@ -60,3 +60,84 @@ void UHierarchicalNode_Base::SetUpOutputPins()
 		}
 	}
 }
+
+UObject* UHierarchicalNode_Base::GetFinalizedAssetRecursive() const
+{
+
+	UE_LOG(LogTemp, Warning, TEXT("Getting Finalized"))
+
+	//No caching, 
+	UObject* OutObject = DuplicateObject<UObject>(GetInnerObject(), GetTransientPackage(), NAME_None);
+
+	for (UEdGraphPin* Pin : Pins) {
+		if (Pin->Direction != EGPD_Output) continue; // only consider output pins
+		if (!Pin->LinkedTo.Num()) continue; //only consider pins with actual connections
+
+		FEdGraphPinType PinType = Pin->PinType;
+
+		if (PinType.PinSubCategory != UHierarchicalGraphSchema::SC_ChildNode) continue;
+
+		FProperty* Property = InnerClass->FindPropertyByName(Pin->PinName);
+
+		if (PinType.ContainerType == EPinContainerType::Array) {
+			TArray<UObject*> ChildObjects;
+			
+			UEdGraphNode* ArrayNode = nullptr;
+
+			//Get connected array node from pin
+			if (Pin->LinkedTo.Num()) {
+				UEdGraphPin* ConnectedPin = *Pin->LinkedTo.begin();
+				ArrayNode = ConnectedPin->GetOwningNode();
+			}
+
+			if (ArrayNode == nullptr) continue;
+
+			//get connected child nodes from array node and add respective finalized assets
+			for (UEdGraphPin* ArrayPin : ArrayNode->Pins) {
+				if (ArrayPin->Direction != EGPD_Output) continue;
+				if (!ArrayPin->LinkedTo.Num()) continue;
+
+				UEdGraphPin* ConnectedPin = *ArrayPin->LinkedTo.begin();
+				UEdGraphNode* ChildNode = ConnectedPin->GetOwningNode();
+
+				UHierarchicalNode_Base* NodeAsBase = Cast< UHierarchicalNode_Base>(ChildNode);
+
+				if (NodeAsBase == nullptr) continue;
+
+				ChildObjects.Add(NodeAsBase->GetFinalizedAssetRecursive());
+			}
+
+			for (UObject* Child : ChildObjects) {
+				Child->Rename(nullptr, OutObject);
+			}
+
+			TArray<UObject*>* ArrayPointer = Property->ContainerPtrToValuePtr<TArray<UObject*>>(OutObject);
+			*ArrayPointer = ChildObjects;
+		}
+		else {
+
+			UEdGraphNode* ChildNode = nullptr;
+
+			if (Pin->LinkedTo.Num()) {
+				UEdGraphPin* ConnectedPin = *Pin->LinkedTo.begin();
+				ChildNode = ConnectedPin->GetOwningNode();
+			}
+
+			if (ChildNode == nullptr) continue;
+
+			UHierarchicalNode_Base* ChildAsBase = Cast< UHierarchicalNode_Base>(ChildNode);
+
+			if (ChildAsBase == nullptr) continue;
+
+			UObject** ObjectPointer = Property->ContainerPtrToValuePtr<UObject*>(OutObject);
+
+			UObject* ChildObject = ChildAsBase->GetFinalizedAssetRecursive();
+
+			ChildObject->Rename(nullptr, OutObject);
+
+			*ObjectPointer = ChildObject;
+		}
+	}
+	
+	return OutObject;
+}
