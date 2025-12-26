@@ -13,7 +13,10 @@ public:
 	virtual bool GetCanRenameNode() const override { return true; }
 
 public:
+	virtual UObject* GetFinalizedAssetRecursive() const override;
+
+protected:
 	virtual void SetUpInputPins() override;
 	virtual void SetUpOutputPins() override;
-	virtual UObject* GetFinalizedAssetRecursive() const override;
+	virtual TArray<FString> GetFieldNamesToIgnore() const override;
 };

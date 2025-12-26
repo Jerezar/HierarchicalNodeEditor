@@ -54,9 +54,7 @@ void UHierarchicalStateNode::SetUpOutputPins()
 
 		UE_LOG(LogTemp, Warning, TEXT("Checking %s"), *(PropIterator->GetName()))
 
-		if (PropIterator->GetName() == "UniqueId") {
-			continue;
-		}
+		if (GetFieldNamesToIgnore().Contains(PropIterator->GetName())) continue;
 
 		bool bIsArrayField = false;
 		FProperty* TestProperty = *PropIterator;
@@ -87,6 +85,13 @@ void UHierarchicalStateNode::SetUpOutputPins()
 				);
 			}
 	}
+}
+
+TArray<FString> UHierarchicalStateNode::GetFieldNamesToIgnore() const
+{
+	TArray<FString> IgnoreNames = UHierarchicalChildNode::GetFieldNamesToIgnore();
+	IgnoreNames.Add("UniqueId");
+	return IgnoreNames;
 }
 
 UObject* UHierarchicalStateNode::GetFinalizedAssetRecursive() const

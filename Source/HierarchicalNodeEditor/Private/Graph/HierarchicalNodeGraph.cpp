@@ -5,8 +5,10 @@
 #include "HierarchicalArrayNode.h"
 #include "ActorState.h"
 #include "ActorStateTransition.h"
+#include "SpawnTableLink.h"
 #include "Graph/HierarchicalStateNode.h"
 #include "Graph/HierarchicalTransitionNode.h"
+#include "Graph/HierarchicalTableLinkNode.h"
 
 void UHierarchicalGraphSchema::GetGraphContextActions(FGraphContextMenuBuilder& ContextMenuBuilder) const
 {
@@ -107,21 +109,34 @@ FNewChildNodeAction::FNewChildNodeAction()
 {
 }
 
+TMap<UClass*, UClass*> AssetClassToNodeClass{
+	{UActorState::StaticClass(), UHierarchicalStateNode::StaticClass()},
+	{UActorStateTransition::StaticClass(), UHierarchicalTransitionNode::StaticClass()},
+	{USpawnTableLink::StaticClass(), UHierarchicalTableLinkNode::StaticClass()}
+};
+
 UEdGraphNode* FNewChildNodeAction::PerformAction(UEdGraph* ParentGraph, UEdGraphPin* FromPin, const FVector2D Location, bool bSelectNewNode)
 {
-	UHierarchicalChildNode* Result = nullptr;
-	
-	if (InnerClass->IsChildOf(UActorState::StaticClass())) {
+	bool bHasClassNodeOverride = false;
+	UClass** NodeClassPtr = nullptr;
 
-		Result = NewObject< UHierarchicalStateNode >(ParentGraph);
-	}
-	else if (InnerClass->IsChildOf(UActorStateTransition::StaticClass())) {
 
-		Result = NewObject< UHierarchicalTransitionNode >(ParentGraph);
+	for (UClass* InnerClassIterator = InnerClass; InnerClassIterator != nullptr; InnerClassIterator = InnerClassIterator->GetSuperClass()) {
+
+		NodeClassPtr = AssetClassToNodeClass.Find(InnerClassIterator);
+		UE_LOG(LogTemp, Warning, TEXT("%s"), *InnerClassIterator->GetName());
+		if (NodeClassPtr != nullptr) {
+			bHasClassNodeOverride = true;
+			UE_LOG(LogTemp, Warning, TEXT("Has Nodeclass override"));
+			break;
+		}
 	}
-	else {
-		Result = NewObject< UHierarchicalChildNode >(ParentGraph);
-	}
+
+	UE_LOG(LogTemp, Warning, TEXT("Check NodeCLass found"))
+	UClass* NodeClass = bHasClassNodeOverride ? *NodeClassPtr : UHierarchicalChildNode::StaticClass();
+
+	UE_LOG(LogTemp, Warning, TEXT("Creating Node object"))
+	UHierarchicalChildNode* Result = NewObject<UHierarchicalChildNode>(ParentGraph, NodeClass);
 
 	Result->NodePosX = Location.X;
 	Result->NodePosY = Location.Y;

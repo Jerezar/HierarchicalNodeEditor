@@ -21,6 +21,8 @@ public:
 protected:
 	virtual void SetUpInputPins() {};
 	virtual void SetUpOutputPins();
+	virtual TArray<FString> GetFieldNamesToIgnore() const { return TArray<FString>(); }
+	virtual TArray<FString> GetFieldNamesToMakeInput() const { return TArray<FString>(); }
 
 public:
 	UPROPERTY(EditAnywhere)

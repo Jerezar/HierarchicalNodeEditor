@@ -27,6 +27,8 @@ void UHierarchicalNode_Base::SetUpOutputPins()
 
 	for (TFieldIterator<FProperty> PropIterator(InnerClass); PropIterator; ++PropIterator) {
 
+		if (GetFieldNamesToIgnore().Contains(PropIterator->GetName())) continue;
+
 		UE_LOG(LogTemp, Warning, TEXT("Checking %s"), *(PropIterator->GetName()))
 
 		bool bIsArrayField = false;
