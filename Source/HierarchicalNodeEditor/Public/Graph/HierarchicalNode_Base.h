@@ -1,10 +1,11 @@
 #pragma once 
 
-#include "EdGraph/EdGraphNode.h"
+#include "Graph/HNE_Node.h"
+#include "Graph/HNE_RerouteNode.h"
 #include "HierarchicalNode_Base.generated.h"
 
 UCLASS()
-class UHierarchicalNode_Base : public UEdGraphNode
+class UHierarchicalNode_Base : public UHNE_Node
 {
 	GENERATED_BODY()
 
@@ -14,7 +15,7 @@ public:
 	virtual bool CanUserDeleteNode() const override { return true; }
 
 public:
-	void InitializeHierarchicalNode();
+	virtual void InitializeNode() override;
 	UObject* GetInnerObject() const { return InnerObject; }
 	virtual UObject* GetFinalizedAssetRecursive() const;
 
@@ -24,6 +25,9 @@ protected:
 	virtual TArray<FString> GetFieldNamesToIgnore() const { return TArray<FString>(); }
 	virtual TArray<FString> GetFieldNamesToMakeInput() const { return TArray<FString>(); }
 
+	template <typename TargetNodeClass>
+	static TargetNodeClass* GetDownstreamNode(UEdGraphPin* InPin);
+
 public:
 	UPROPERTY(EditAnywhere)
 	UClass* InnerClass = nullptr;
@@ -32,3 +36,24 @@ private:
 	UPROPERTY()
 	UObject* InnerObject = nullptr;
 };
+
+template<typename TargetNodeClass>
+inline TargetNodeClass* UHierarchicalNode_Base::GetDownstreamNode(UEdGraphPin* InPin)
+{
+	if (InPin == nullptr) return nullptr;
+	if (InPin->LinkedTo.Num() != 1) return nullptr;
+
+	UEdGraphPin* ConnectedPin = *InPin->LinkedTo.begin();
+	UEdGraphNode* ConnectedNode = ConnectedPin->GetOwningNode();
+
+	TargetNodeClass* ConnectedAsTarget = Cast< TargetNodeClass>(ConnectedNode);
+	if (ConnectedAsTarget != nullptr) return ConnectedAsTarget;
+
+	UHNE_RerouteNode* ConnectedAsReroute = Cast<UHNE_RerouteNode>(ConnectedNode);
+	if (ConnectedAsReroute != nullptr) {
+		ConnectedPin = ConnectedAsReroute->GetPassThroughPin(ConnectedPin);
+		return UHierarchicalNode_Base::GetDownstreamNode<TargetNodeClass>(ConnectedPin);
+	}
+
+	return nullptr;
+}

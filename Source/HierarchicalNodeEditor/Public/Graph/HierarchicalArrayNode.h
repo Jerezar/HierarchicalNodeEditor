@@ -1,15 +1,18 @@
 #pragma once 
 
-#include "EdGraph/EdGraphNode.h"
+#include "Graph/HNE_Node.h"
 #include "Framework/Commands/UIAction.h"
 #include "HierarchicalArrayNode.generated.h"
 
 UCLASS()
-class UHierarchicalArrayNode : public UEdGraphNode
+class UHierarchicalArrayNode : public UHNE_Node
 {
 	GENERATED_BODY()
 
 public:
+	UHierarchicalArrayNode();
+
+public: // UEdGraphNode
 	virtual FText GetNodeTitle(ENodeTitleType::Type TitelType) const override { return FText::FromString("Array"); }
 	virtual FLinearColor GetNodeTitleColor() const override { return FLinearColor(0,0,0,0); }
 	virtual FText GetTooltipText() { return FText::FromString("Array Node"); }
@@ -17,7 +20,7 @@ public:
 	virtual void GetNodeContextMenuActions(UToolMenu* Menu, UGraphNodeContextMenuContext* Context) const override;
 
 public:
-	void InitializeArrayNode();
+	virtual void InitializeNode() override;
 	void CreateOutputPin();
 	void DeleteOutputPin();
 

@@ -2,11 +2,24 @@
 #include "HierarchicalArrayNode.h"
 #include "Graph/HierarchicalNodeGraph.h"
 #include "HierarchicalEditInterface.h"
-//#include "UObject/PropertyOptional.h"
 #include "ToolMenu.h"
+#include "HNE_Node.h"
+
+UHierarchicalArrayNode::UHierarchicalArrayNode() : UHNE_Node()
+{
+	CreatePinUIAction = FUIAction(
+		FExecuteAction::CreateLambda([this]() {this->CreateOutputPin(); })
+	);
+
+	DeletePinUIAction = FUIAction(
+		FExecuteAction::CreateLambda([this]() {this->DeleteOutputPin(); })
+	);
+}
 
 void UHierarchicalArrayNode::GetNodeContextMenuActions(UToolMenu* Menu, UGraphNodeContextMenuContext* Context) const
 {
+	UHNE_Node::GetNodeContextMenuActions(Menu, Context);
+
 	FToolMenuSection& Section = Menu->AddSection(TEXT("ArrayNodeActions"), FText::FromString(TEXT("Array Node Actions")));
 
 	Section.AddMenuEntry(
@@ -26,9 +39,9 @@ void UHierarchicalArrayNode::GetNodeContextMenuActions(UToolMenu* Menu, UGraphNo
 	);
 }
 
-void UHierarchicalArrayNode::InitializeArrayNode()
+void UHierarchicalArrayNode::InitializeNode()
 {
-	this->CreateNewGuid();
+	UHNE_Node::InitializeNode();
 
 	FEdGraphPinType InputType(PinTypeTemplate);
 	InputType.ContainerType = EPinContainerType::Array;
@@ -41,23 +54,8 @@ void UHierarchicalArrayNode::InitializeArrayNode()
 
 	CreateOutputPin();
 	CreateOutputPin();
-
-	CreatePinUIAction = FUIAction(
-		FExecuteAction::CreateLambda(
-			[this]() {
-				this->CreateOutputPin();
-			}
-		)
-	);
-
-	DeletePinUIAction = FUIAction(
-		FExecuteAction::CreateLambda(
-			[this]() {
-				this->DeleteOutputPin();
-			}
-		)
-	);
 }
+
 
 void UHierarchicalArrayNode::CreateOutputPin()
 {

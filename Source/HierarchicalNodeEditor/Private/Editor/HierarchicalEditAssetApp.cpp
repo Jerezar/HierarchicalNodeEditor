@@ -67,14 +67,14 @@ void FHierarchicalEditAssetApp::OnGraphSelectionChanged(const FGraphPanelSelecti
 
 void FHierarchicalEditAssetApp::DeleteGraphAction()
 {
-	UEdGraph* Graph = GetWorkingGraph();
-	Graph->Modify();
+	if (!_WorkingGraphUI.IsValid()) return;
 
-	UE_LOG(LogTemp, Warning, TEXT("Deleting Graph nodes"))
+	FGraphPanelSelectionSet SelectedNodes = _WorkingGraphUI->GetSelectedNodes();
 
-	for (UEdGraphNode* Node : Graph->Nodes) {
-		if (Node->IsSelected()) {
-			Graph->RemoveNode(Node);
+	for (UObject* SelectedObject : SelectedNodes) {
+		UHNE_Node* SelectionAsNode = Cast< UHNE_Node>(SelectedObject);
+		if (SelectionAsNode != nullptr) {
+			SelectionAsNode->OnDeleteNodeAction();
 		}
 	}
 	

@@ -58,7 +58,7 @@ UObject* UHierarchicalEditAssetFactory::FactoryCreateNew(UClass* InClass, UObjec
 	Graph->AddNode(Result, true, true);
 
 	Result->InnerClass = AssetClass;
-	Result->InitializeHierarchicalNode();
+	Result->InitializeNode();
 
 	return Asset;
 }

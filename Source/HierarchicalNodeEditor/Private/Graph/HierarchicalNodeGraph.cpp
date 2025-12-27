@@ -9,6 +9,7 @@
 #include "Graph/HierarchicalStateNode.h"
 #include "Graph/HierarchicalTransitionNode.h"
 #include "Graph/HierarchicalTableLinkNode.h"
+#include "Graph/HNE_RerouteNode.h"
 
 void UHierarchicalGraphSchema::GetGraphContextActions(FGraphContextMenuBuilder& ContextMenuBuilder) const
 {
@@ -49,6 +50,19 @@ void UHierarchicalGraphSchema::GetGraphContextActions(FGraphContextMenuBuilder& 
 
 			ContextMenuBuilder.AddAction(NewNodeAction);
 		}
+	}
+
+	if (ContextMenuBuilder.FromPin != nullptr) {
+		TSharedPtr< FNewRerouteNodeAction> NewArrayAction(
+			new FNewRerouteNodeAction(
+				FText::FromString(TEXT("Reroute")),
+				FText::FromString(TEXT("Reroute Node")),
+				FText::FromString(TEXT("Makes a new reroute node")),
+				0
+			)
+		);
+
+		ContextMenuBuilder.AddAction(NewArrayAction);
 	}
 
 	if (bIsArrayOutput) {
@@ -145,7 +159,7 @@ UEdGraphNode* FNewChildNodeAction::PerformAction(UEdGraph* ParentGraph, UEdGraph
 	ParentGraph->AddNode(Result, true, bSelectNewNode);
 
 	Result->InnerClass = InnerClass;
-	Result->InitializeHierarchicalNode();
+	Result->InitializeNode();
 
 	if (FromPin != nullptr && FromPin->Direction == EGPD_Output) {
 		UEdGraphPin* InputPin = Result->FindPin(FName("Parent"), EGPD_Input);
@@ -170,7 +184,33 @@ UEdGraphNode* FNewArrayNodeAction::PerformAction(UEdGraph* ParentGraph, UEdGraph
 	ParentGraph->AddNode(Result, true, bSelectNewNode);
 
 	Result->PinTypeTemplate = FEdGraphPinType(FromPin->PinType);
-	Result->InitializeArrayNode();
+	Result->InitializeNode();
+
+	if (FromPin != nullptr && FromPin->Direction == EGPD_Output) {
+		UEdGraphPin* InputPin = Result->FindPin(NAME_None, EGPD_Input);
+		ParentGraph->GetSchema()->TryCreateConnection(FromPin, InputPin);
+	}
+
+	return Result;
+}
+
+FNewRerouteNodeAction::FNewRerouteNodeAction()
+{
+}
+
+UEdGraphNode* FNewRerouteNodeAction::PerformAction(UEdGraph* ParentGraph, UEdGraphPin* FromPin, const FVector2D Location, bool bSelectNewNode)
+{
+	
+	UHNE_RerouteNode* Result = NewObject< UHNE_RerouteNode >(ParentGraph);
+
+	Result->NodePosX = Location.X;
+	Result->NodePosY = Location.Y;
+
+	ParentGraph->Modify();
+	ParentGraph->AddNode(Result, true, bSelectNewNode);
+
+	Result->PinTypeTemplate = FEdGraphPinType(FromPin->PinType);
+	Result->InitializeNode();
 
 	if (FromPin != nullptr && FromPin->Direction == EGPD_Output) {
 		UEdGraphPin* InputPin = Result->FindPin(NAME_None, EGPD_Input);

@@ -1,10 +1,12 @@
 
 #include "HierarchicalNode_Base.h"
 #include "Graph/HierarchicalNodeGraph.h"
+#include "Graph/HierarchicalArrayNode.h"
+
 #include "HierarchicalEditInterface.h"
 //#include "UObject/PropertyOptional.h"
 
-void UHierarchicalNode_Base::InitializeHierarchicalNode()
+void UHierarchicalNode_Base::InitializeNode()
 {
 
 	this->CreateNewGuid();
@@ -84,29 +86,19 @@ UObject* UHierarchicalNode_Base::GetFinalizedAssetRecursive() const
 		if (PinType.ContainerType == EPinContainerType::Array) {
 			TArray<UObject*> ChildObjects;
 			
-			UEdGraphNode* ArrayNode = nullptr;
-
-			//Get connected array node from pin
-			if (Pin->LinkedTo.Num()) {
-				UEdGraphPin* ConnectedPin = *Pin->LinkedTo.begin();
-				ArrayNode = ConnectedPin->GetOwningNode();
-			}
+			UHierarchicalArrayNode* ArrayNode = GetDownstreamNode<UHierarchicalArrayNode>(Pin);
 
 			if (ArrayNode == nullptr) continue;
 
 			//get connected child nodes from array node and add respective finalized assets
 			for (UEdGraphPin* ArrayPin : ArrayNode->Pins) {
 				if (ArrayPin->Direction != EGPD_Output) continue;
-				if (!ArrayPin->LinkedTo.Num()) continue;
 
-				UEdGraphPin* ConnectedPin = *ArrayPin->LinkedTo.begin();
-				UEdGraphNode* ChildNode = ConnectedPin->GetOwningNode();
+				UHierarchicalNode_Base* ChildNode = GetDownstreamNode< UHierarchicalNode_Base>(ArrayPin);
 
-				UHierarchicalNode_Base* NodeAsBase = Cast< UHierarchicalNode_Base>(ChildNode);
+				if (ChildNode == nullptr) continue;
 
-				if (NodeAsBase == nullptr) continue;
-
-				ChildObjects.Add(NodeAsBase->GetFinalizedAssetRecursive());
+				ChildObjects.Add(ChildNode->GetFinalizedAssetRecursive());
 			}
 
 			for (UObject* Child : ChildObjects) {
@@ -118,22 +110,13 @@ UObject* UHierarchicalNode_Base::GetFinalizedAssetRecursive() const
 		}
 		else {
 
-			UEdGraphNode* ChildNode = nullptr;
-
-			if (Pin->LinkedTo.Num()) {
-				UEdGraphPin* ConnectedPin = *Pin->LinkedTo.begin();
-				ChildNode = ConnectedPin->GetOwningNode();
-			}
+			UHierarchicalNode_Base* ChildNode = GetDownstreamNode< UHierarchicalNode_Base> (Pin);
 
 			if (ChildNode == nullptr) continue;
 
-			UHierarchicalNode_Base* ChildAsBase = Cast< UHierarchicalNode_Base>(ChildNode);
-
-			if (ChildAsBase == nullptr) continue;
-
 			UObject** ObjectPointer = Property->ContainerPtrToValuePtr<UObject*>(OutObject);
 
-			UObject* ChildObject = ChildAsBase->GetFinalizedAssetRecursive();
+			UObject* ChildObject = ChildNode->GetFinalizedAssetRecursive();
 
 			ChildObject->Rename(nullptr, OutObject);
 
