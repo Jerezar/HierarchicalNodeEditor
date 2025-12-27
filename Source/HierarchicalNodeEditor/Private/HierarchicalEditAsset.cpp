@@ -98,6 +98,7 @@ void UHierarchicalEditAsset::CompileGraphToAsset()
 		if (OutAsset->GetClass() != RootNode->InnerClass) {
 
 			UE_LOG(LogTemp, Error, TEXT("Existing Asset is of incompatible class."));
+			return;
 		}
 
 		TArray<UObject*> SubObjectsToReparent;
@@ -107,7 +108,14 @@ void UHierarchicalEditAsset::CompileGraphToAsset()
 			SubObject->Rename(nullptr, OutAsset);
 		}
 
+		for (TFieldIterator<FProperty> PropIter(RootNode->InnerClass); PropIter; ++PropIter) {
+			PropIter->CopyCompleteValue(
+				/*Dest*/PropIter->ContainerPtrToValuePtr<void>(OutAsset), 
+				/*Src*/PropIter->ContainerPtrToValuePtr<void>(FinalizedAsset)
+			);
+		}
 
+		OutAsset->Modify();
 	}
 	else {
 		FinalizedAsset->Rename(*OutAssetName, OutPackage);
