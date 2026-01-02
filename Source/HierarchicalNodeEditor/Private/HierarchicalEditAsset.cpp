@@ -2,13 +2,18 @@
 
 
 #include "HierarchicalEditAsset.h"
+
 #include "Graph/HierarchicalRootNode.h"
 #include "Graph/HierarchicalNodeGraph.h"
 #include "Graph/HierarchicalStateNode.h"
+
 #include "ActorState.h"
 #include "UObject/SavePackage.h"
 #include "AssetRegistryModule.h"
 #include "Kismet/KismetSystemLibrary.h"
+
+#include "ContentBrowserModule.h"
+#include "IContentBrowserSingleton.h"
 
 void UHierarchicalEditAsset::CompileGraphToAsset()
 {
@@ -16,11 +21,6 @@ void UHierarchicalEditAsset::CompileGraphToAsset()
 
 	if (!ValidateInputPins(WorkingGraph)) {
 		UE_LOG(LogTemp, Error, TEXT("Graph failed validation"));
-		return;
-	}
-
-	if (TargetInfo.OutAssetName.IsNone()) {
-		UE_LOG(LogTemp, Error, TEXT("Did not specify name for created asset."));
 		return;
 	}
 
@@ -32,74 +32,21 @@ void UHierarchicalEditAsset::CompileGraphToAsset()
 		return;
 	}
 
-	UPackage* GraphOwnerPackage = this->GetPackage();
-
-	FString OutAssetName = TargetInfo.OutAssetName.ToString();
-	FString OutAssetPath = TargetInfo.OutAssetPath.ToString();
-
-	if (TargetInfo.OutAssetPath.IsNone()) {
-		OutAssetPath = GraphOwnerPackage->GetFName().ToString();
-		FString Prefix = "/Game/";
-		if (OutAssetPath.StartsWith(Prefix)) {
-			OutAssetPath = OutAssetPath.RightChop(Prefix.Len());
-		}
-		if (OutAssetPath.EndsWith(this->GetName())) {
-			OutAssetPath = OutAssetPath.LeftChop(this->GetName().Len());
-		}
-	}
-
-	if (!OutAssetPath.EndsWith("/")) {
-		OutAssetPath += "/";
-	}
-
-	FString OutPackageFolder = "/Game/" + OutAssetPath;
-	FString OutFolderPath = FPaths::ProjectContentDir() + OutAssetPath;
-
-
-	UPackage* OutPackage = CreatePackage(*(OutPackageFolder + OutAssetName));
-
-	if (OutPackage == nullptr) {
-		UE_LOG(LogTemp, Error, TEXT("No package to save into."));
-		return;
-	}
-
-	UObject* OutAsset = FindObject<UObject>(OutPackage, *(TargetInfo.OutAssetName.ToString()), false);
-
-	if (OutAsset != nullptr) {
-		
-
-		UE_LOG(LogTemp, Error, TEXT("Asset exists already, lets skip for now"));
-
-		const FText DialogTitle = FText::FromString("Overwrite existing asset?");
-		const FText DialogMessage = FText::FromString("An asset with the specified name already exists. Do you wish to overwrite it?");
-
-		const EAppReturnType::Type Response = FMessageDialog::Open(EAppMsgType::YesNo, DialogMessage, &DialogTitle);
-
-		if (Response != EAppReturnType::Yes){
-			return;
-		}
-	}
-
 	UHierarchicalRootNode* RootNode = *RootNodes.begin();
 
-	UObject* FinalizedAsset = RootNode->GetFinalizedAssetRecursive();
+	UObject* OutAsset = TargetInfo.OutAsset;
 
-	FSavePackageArgs SaveArgs;
-
-	// This is specified just for example
-	{
-		SaveArgs.TopLevelFlags = RF_Public | RF_Standalone;
-		SaveArgs.SaveFlags = SAVE_NoError;
-	}
-
-
+	//if existing out asset, simply try overwrite
 	if (OutAsset != nullptr) {
+		UE_LOG(LogTemp, Log, TEXT("Attempting to overwrite existing asset."));
 
 		if (OutAsset->GetClass() != RootNode->InnerClass) {
 
-			UE_LOG(LogTemp, Error, TEXT("Existing Asset is of incompatible class."));
+			UE_LOG(LogTemp, Error, TEXT("Existing asset is of incompatible class."));
 			return;
 		}
+
+		UObject* FinalizedAsset = RootNode->GetFinalizedAssetRecursive();
 
 		TArray<UObject*> SubObjectsToReparent;
 		GetObjectsWithOuter(FinalizedAsset, SubObjectsToReparent);
@@ -110,28 +57,66 @@ void UHierarchicalEditAsset::CompileGraphToAsset()
 
 		for (TFieldIterator<FProperty> PropIter(RootNode->InnerClass); PropIter; ++PropIter) {
 			PropIter->CopyCompleteValue(
-				/*Dest*/PropIter->ContainerPtrToValuePtr<void>(OutAsset), 
+				/*Dest*/PropIter->ContainerPtrToValuePtr<void>(OutAsset),
 				/*Src*/PropIter->ContainerPtrToValuePtr<void>(FinalizedAsset)
 			);
 		}
 
+		UE_LOG(LogTemp, Log, TEXT("Finished overwriting."));
 		OutAsset->Modify();
+		return;
 	}
-	else {
-		FinalizedAsset->Rename(*OutAssetName, OutPackage);
-		FinalizedAsset->SetFlags(EObjectFlags::RF_Public | EObjectFlags::RF_Standalone);
 
 
-		FAssetRegistryModule::AssetCreated(FinalizedAsset);
-		FinalizedAsset->MarkPackageDirty();
+	UE_LOG(LogTemp, Log, TEXT("No existing asset. Must create new."));
 
-		FString FilePath = FString::Printf(TEXT("%s%s%s"), *OutFolderPath, *OutAssetName, *FPackageName::GetAssetPackageExtension());
-		bool bSuccess = UPackage::SavePackage(OutPackage, FinalizedAsset, EObjectFlags::RF_Public | EObjectFlags::RF_Standalone, *FilePath);
+	UPackage* GraphOwnerPackage = this->GetPackage();
+	
+	FSaveAssetDialogConfig SaveAssetDialogConfig;
+	SaveAssetDialogConfig.DialogTitleOverride = NSLOCTEXT("", "SaveAssetDialogTitle", "Save Asset As");
+	SaveAssetDialogConfig.DefaultPath = GraphOwnerPackage->GetFName().ToString();
+	SaveAssetDialogConfig.DefaultAssetName = this->GetFName().ToString()+"_Output";
+	SaveAssetDialogConfig.ExistingAssetPolicy = ESaveAssetDialogExistingAssetPolicy::Disallow;
 
-		UE_LOG(LogTemp, Warning, TEXT("Saved Package: %s"), bSuccess ? TEXT("True") : TEXT("False"));
-		UE_LOG(LogTemp, Warning, TEXT("Saved Package to: %s"), *OutFolderPath);
+	FContentBrowserModule& ContentBrowserModule = FModuleManager::LoadModuleChecked<FContentBrowserModule>("ContentBrowser");
+	FString SaveObjectPath = ContentBrowserModule.Get().CreateModalSaveAssetDialog(SaveAssetDialogConfig);
 
+	if (SaveObjectPath.IsEmpty()) return;
+	
+	const FString SavePackageName = FPackageName::ObjectPathToPackageName(SaveObjectPath);
+	const FString SavePackagePath = FPaths::GetPath(SavePackageName);
+	const FString SaveAssetName = FPaths::GetBaseFilename(SavePackageName);
+
+
+	UPackage* OutPackage = CreatePackage(*SavePackageName);
+
+	if (OutPackage == nullptr) {
+		UE_LOG(LogTemp, Error, TEXT("No package to save into."));
+		return;
 	}
+
+	
+
+	
+
+	UObject* FinalizedAsset = RootNode->GetFinalizedAssetRecursive();
+
+
+	FinalizedAsset->Rename(*SaveAssetName, OutPackage);
+	FinalizedAsset->SetFlags(EObjectFlags::RF_Public | EObjectFlags::RF_Standalone);
+
+
+	FAssetRegistryModule::AssetCreated(FinalizedAsset);
+	FinalizedAsset->MarkPackageDirty();
+
+	FString FilePath = FString::Printf(TEXT("%s%s"), *SaveObjectPath, *FPackageName::GetAssetPackageExtension());
+	bool bSuccess = UPackage::SavePackage(OutPackage, FinalizedAsset, EObjectFlags::RF_Public | EObjectFlags::RF_Standalone, *FilePath);
+
+	UE_LOG(LogTemp, Warning, TEXT("Saved Package: %s"), bSuccess ? TEXT("True") : TEXT("False"));
+	UE_LOG(LogTemp, Warning, TEXT("Saved Package to: %s"), *SaveObjectPath);
+
+	TargetInfo.OutAsset = FinalizedAsset;
+	this->Modify();
 
 }
 

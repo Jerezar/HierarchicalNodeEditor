@@ -8,12 +8,9 @@ struct FAssetTargetInfo {
 	GENERATED_BODY()
 
 public:
-	UPROPERTY(EditAnywhere, meta = (ToolTip = "The name of the generated asset/file. Must not be 'None'."))
-	FName OutAssetName;
-
-
-	UPROPERTY(EditAnywhere, meta = (ToolTip = "The folder path relative to the content folder. If 'None', uses the folder containing this graph"))
-	FName OutAssetPath;
+	
+	UPROPERTY(EditAnywhere, meta = (ToolTip = "The asset to edit. If not set, uses OutAssetName and OutAssetPath to create a new asset or find an existing one."))
+	UObject* OutAsset = nullptr;
 };
 
 UCLASS(BlueprintType)
