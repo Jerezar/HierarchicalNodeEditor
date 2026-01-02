@@ -49,7 +49,7 @@ void UHierarchicalArrayNode::InitializeNode()
 	this->CreatePin(
 		EGPD_Input,
 		InputType,
-		NAME_None
+		FName("Input")
 	);
 
 	CreateOutputPin();
@@ -81,4 +81,32 @@ void UHierarchicalArrayNode::DeleteOutputPin()
 
 	this->GetGraph()->NotifyGraphChanged();
 	this->GetGraph()->Modify();
+}
+
+void UHierarchicalArrayNode::SetNumberOfOutPins(uint32 TargetNumber)
+{
+	int NumberOfExistingPins = this->Pins.Num() - 1;
+
+	int NumberDifference = TargetNumber - NumberOfExistingPins;
+
+	if (NumberDifference > 0) {
+		for (int i = NumberDifference; i > 0; --i) {
+			CreateOutputPin();
+		}
+	} else {
+		for (int i = abs(NumberDifference); i > 0; --i) {
+			DeleteOutputPin();
+		}
+	}
+}
+
+bool UHierarchicalArrayNode::ShouldOverridePinNames() const
+{
+	return true;
+}
+
+FText UHierarchicalArrayNode::GetPinNameOverride(const UEdGraphPin& Pin) const
+{
+	// Keep the pin size tiny
+	return FText::GetEmpty();
 }

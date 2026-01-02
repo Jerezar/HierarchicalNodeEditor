@@ -3,13 +3,8 @@
 #include "HierarchicalEditInterface.h"
 #include "HierarchicalChildNode.h"
 #include "HierarchicalArrayNode.h"
-#include "ActorState.h"
-#include "ActorStateTransition.h"
-#include "SpawnTableLink.h"
-#include "Graph/HierarchicalStateNode.h"
-#include "Graph/HierarchicalTransitionNode.h"
-#include "Graph/HierarchicalTableLinkNode.h"
 #include "Graph/HNE_RerouteNode.h"
+#include "Graph/HNE_GraphUtils.h"
 
 void UHierarchicalGraphSchema::GetGraphContextActions(FGraphContextMenuBuilder& ContextMenuBuilder) const
 {
@@ -123,31 +118,14 @@ FNewChildNodeAction::FNewChildNodeAction()
 {
 }
 
-TMap<UClass*, UClass*> AssetClassToNodeClass{
-	{UActorState::StaticClass(), UHierarchicalStateNode::StaticClass()},
-	{UActorStateTransition::StaticClass(), UHierarchicalTransitionNode::StaticClass()},
-	{USpawnTableLink::StaticClass(), UHierarchicalTableLinkNode::StaticClass()}
-};
+
 
 UEdGraphNode* FNewChildNodeAction::PerformAction(UEdGraph* ParentGraph, UEdGraphPin* FromPin, const FVector2D Location, bool bSelectNewNode)
 {
-	bool bHasClassNodeOverride = false;
-	UClass** NodeClassPtr = nullptr;
+	
+	UClass* NodeClass = FHNE_GraphUtils::GetNodeClassForObjectClass(InnerClass);
 
-
-	for (UClass* InnerClassIterator = InnerClass; InnerClassIterator != nullptr; InnerClassIterator = InnerClassIterator->GetSuperClass()) {
-
-		NodeClassPtr = AssetClassToNodeClass.Find(InnerClassIterator);
-		UE_LOG(LogTemp, Warning, TEXT("%s"), *InnerClassIterator->GetName());
-		if (NodeClassPtr != nullptr) {
-			bHasClassNodeOverride = true;
-			UE_LOG(LogTemp, Warning, TEXT("Has Nodeclass override"));
-			break;
-		}
-	}
-
-	UE_LOG(LogTemp, Warning, TEXT("Check NodeCLass found"))
-	UClass* NodeClass = bHasClassNodeOverride ? *NodeClassPtr : UHierarchicalChildNode::StaticClass();
+	if (NodeClass == nullptr) return nullptr;
 
 	UE_LOG(LogTemp, Warning, TEXT("Creating Node object"))
 	UHierarchicalChildNode* Result = NewObject<UHierarchicalChildNode>(ParentGraph, NodeClass);

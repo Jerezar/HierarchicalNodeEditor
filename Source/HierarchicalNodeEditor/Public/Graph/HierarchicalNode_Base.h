@@ -18,6 +18,7 @@ public:
 	virtual void InitializeNode() override;
 	UObject* GetInnerObject() const { return InnerObject; }
 	virtual UObject* GetFinalizedAssetRecursive() const;
+	virtual void SetInnerObject(UObject* InObject);
 
 protected:
 	virtual void SetUpInputPins() {};

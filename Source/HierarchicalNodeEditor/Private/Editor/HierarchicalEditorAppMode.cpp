@@ -3,6 +3,10 @@
 #include "Editor/HierachicalGraphTabFactory.h"
 #include "Editor/HierachicalTargetTabFactory.h"
 #include "Editor/HierachicalPropertiesTabFactory.h"
+#include "Importer/HNE_AssetImporter.h"
+
+#include "ContentBrowserModule.h"
+#include "IContentBrowserSingleton.h"
 
 FHierarchicalEditorAppMode::FHierarchicalEditorAppMode(TSharedPtr<class FHierarchicalEditAssetApp> App) : FApplicationMode(ModeIdentifier)
 {
@@ -71,6 +75,46 @@ void FHierarchicalEditorAppMode::FillToolbar(FToolBarBuilder& ToolbarBuilder)
 		NAME_None,
 		FText::FromString(TEXT("Compile")),
 		FText::FromString(TEXT("Create runtime asset from editor graph"))
+	);
+
+	ToolbarBuilder.AddToolBarButton(
+		FUIAction(
+			FExecuteAction::CreateLambda(
+				[this]() {
+					UE_LOG(LogTemp, Warning, TEXT("Button press"));
+					if (!(this->_App.IsValid())) return;
+					TSharedPtr<FHierarchicalEditAssetApp> PinnedApp = _App.Pin();
+
+					UHierarchicalEditAsset* WorkingAsset = PinnedApp->GetWorkingAsset();
+
+					FOpenAssetDialogConfig OpenAssetDialogConfig;
+					OpenAssetDialogConfig.DialogTitleOverride = NSLOCTEXT("", "SaveAssetDialogTitle", "Save Asset As");
+					OpenAssetDialogConfig.DefaultPath = WorkingAsset->GetPackage()->GetFName().ToString();
+					OpenAssetDialogConfig.bAllowMultipleSelection = false;
+
+					FContentBrowserModule& ContentBrowserModule = FModuleManager::LoadModuleChecked<FContentBrowserModule>("ContentBrowser");
+					TArray<FAssetData> SelectedAssets = ContentBrowserModule.Get().CreateModalOpenAssetDialog(OpenAssetDialogConfig);
+
+					if (!SelectedAssets.Num()) return;
+
+					FAssetData SelectedAssetData = *(SelectedAssets.begin());
+
+					UObject* SelectedAsset = SelectedAssetData.GetAsset();
+
+					if (SelectedAsset == nullptr) return;
+
+					const FText DialogTitle = FText::FromString("Set as output?");
+					const FText DialogMessage = FText::FromString("Should the imported asset be set as the output target? Compiling will then overwrite it.");
+
+					const EAppReturnType::Type Response = FMessageDialog::Open(EAppMsgType::YesNo, DialogMessage, &DialogTitle);
+
+					FHNE_AssetImporter::ImportObjectIntoGraph(WorkingAsset, SelectedAsset, (Response == EAppReturnType::Yes) );
+				}
+			)
+		),
+		NAME_None,
+		FText::FromString(TEXT("Import")),
+		FText::FromString(TEXT("Overwrites the current graph with one created "))
 	);
 }
 

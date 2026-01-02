@@ -126,3 +126,22 @@ UObject* UHierarchicalNode_Base::GetFinalizedAssetRecursive() const
 	
 	return OutObject;
 }
+
+void UHierarchicalNode_Base::SetInnerObject(UObject* InObject)
+{
+	if (InObject->GetClass() != InnerClass) return;
+
+	TArray<FString> PinNames;
+	for (UEdGraphPin* Pin : Pins) {
+		PinNames.Add(Pin->GetName());
+	}
+
+	for (TFieldIterator<FProperty> PropIter(InnerClass); PropIter; ++PropIter) {
+
+		if (PinNames.Contains(PropIter->GetFName().ToString())) continue;
+
+		void* ValSource = PropIter->ContainerPtrToValuePtr<void>(InObject);
+		void* ValDestination = PropIter->ContainerPtrToValuePtr<void>(InnerObject);
+		PropIter->CopyCompleteValue(ValDestination, ValSource);
+	}
+}

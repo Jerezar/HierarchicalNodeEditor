@@ -19,10 +19,14 @@ public: // UEdGraphNode
 	virtual bool CanUserDeleteNode() const override { return true; }
 	virtual void GetNodeContextMenuActions(UToolMenu* Menu, UGraphNodeContextMenuContext* Context) const override;
 
+	virtual bool ShouldOverridePinNames() const override;
+	virtual FText GetPinNameOverride(const UEdGraphPin& Pin) const override;
+
 public:
 	virtual void InitializeNode() override;
 	void CreateOutputPin();
 	void DeleteOutputPin();
+	void SetNumberOfOutPins(uint32 TargetNumber);
 
 public:
 
