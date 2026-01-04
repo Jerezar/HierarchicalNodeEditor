@@ -8,6 +8,9 @@
 #include "Graph/HierarchicalChildNode.h"
 #include "Graph/HierarchicalArrayNode.h"
 
+#include "Importer/HNE_ConnectionBuilder.h"
+#include "Importer/HNE_StateIDConnectionTracker.h"
+
 bool FHNE_AssetImporter::ImportObjectIntoGraph(UHierarchicalEditAsset* GraphAsset, UObject* InObject, bool bSetImportedAsTarget)
 {
     if (InObject == nullptr) return false;
@@ -15,6 +18,9 @@ bool FHNE_AssetImporter::ImportObjectIntoGraph(UHierarchicalEditAsset* GraphAsse
     if ( !(InObject->GetClass()->ImplementsInterface(UHierarchicalEditInterface::StaticClass())) ) {
         return false;
     }
+
+    //InObject = DuplicateObject(InObject, GetTransientPackage());
+    //Can't do that here, messes with FGUIDs; instead done in 
 
     UEdGraph* GraphToOverwrite = GraphAsset->WorkingGraph;
     GraphToOverwrite->Modify();
@@ -25,6 +31,16 @@ bool FHNE_AssetImporter::ImportObjectIntoGraph(UHierarchicalEditAsset* GraphAsse
     for (UHNE_Node* Node : AllNodes) {
         GraphToOverwrite->RemoveNode(Node);
     }
+
+    //Setup tracker for non-parent/child connections
+    TSharedPtr<FHNE_ConnectionTracker> ConnectionTracker = MakeShared< FHNE_MultiConnectionBuilder>( 
+        TMap<FName, TSharedPtr<FHNE_ConnectionTracker>>
+        {
+            {UHierarchicalGraphSchema::SC_StateTransition, MakeShared<FHNE_StateIDConnectionTracker>()}
+        }
+    );
+
+
 
     //Create new root node
 
@@ -45,35 +61,51 @@ bool FHNE_AssetImporter::ImportObjectIntoGraph(UHierarchicalEditAsset* GraphAsse
 
     for (UEdGraphPin* Pin : RootNode->Pins) {
         int BranchHeight = 0;
-        if (Pin->Direction != EGPD_Output) continue;
 
         FEdGraphPinType PinType = Pin->PinType;
+        if (PinType.PinSubCategory != UHierarchicalGraphSchema::SC_ChildNode && PinType.ContainerType != EPinContainerType::Array) {
+            ConnectionTracker->RegisterValuePin(Pin, RootNode->GetInnerObject());
+        }
+
+        if (Pin->Direction != EGPD_Output) continue;
 
         FProperty* OutProp = RootNode->InnerClass->FindPropertyByName(Pin->GetFName());
 
         if (PinType.ContainerType == EPinContainerType::Array) {
-            FHNE_AssetImporter::MakeArrayNodeRecursive(Pin, OutProp, InObject, NextNodePos, Margins, BranchHeight);
+            FHNE_AssetImporter::MakeArrayNodeRecursive(Pin, OutProp, InObject, ConnectionTracker, NextNodePos, Margins, BranchHeight);
         }
         else if (PinType.PinSubCategory == UHierarchicalGraphSchema::SC_ChildNode) {
-            UObject* ChildObject = OutProp->ContainerPtrToValuePtr<UObject>(InObject);
-            FHNE_AssetImporter::MakeChildNodeRecursive(Pin, ChildObject, NextNodePos, Margins, BranchHeight);
+            UObject** ChildObject = OutProp->ContainerPtrToValuePtr<UObject*>(InObject);
+            FHNE_AssetImporter::MakeChildNodeRecursive(Pin, *ChildObject, ConnectionTracker, NextNodePos, Margins, BranchHeight);
         }
-        else {
-            // get connection tracker for subcategory
-        }
+
         NextNodePos.Y += BranchHeight + Margins.Y;
     }
+
+
+    UE_LOG(LogTemp, Log, TEXT("Setting up non-ownership connections"));
+    ConnectionTracker->SetUpConnections();
 
     if (bSetImportedAsTarget) {
         GraphAsset->TargetInfo.OutAsset = InObject;
         GraphAsset->Modify();
     }
 
+    //Clear all values governed by node connections.
+    TArray< UHierarchicalNode_Base*> AllObjectNodes;
+    GraphToOverwrite->GetNodesOfClass<UHierarchicalNode_Base>(AllObjectNodes);
+    for (UHierarchicalNode_Base* Node : AllObjectNodes) {
+        Node->ClearOutPinValues();
+    }
+
+
     return true;
 }
 
-bool FHNE_AssetImporter::MakeArrayNodeRecursive(UEdGraphPin* FromPin, FProperty* InProperty, UObject* InObject, FVector2D NodePos, FVector2D Margins, int& OutBranchHeight)
+bool FHNE_AssetImporter::MakeArrayNodeRecursive(UEdGraphPin* FromPin, FProperty* InProperty, UObject* InObject, TSharedPtr<FHNE_ConnectionTracker> ConnectionTracker, FVector2D NodePos, FVector2D Margins, int& OutBranchHeight)
 {
+    UE_LOG(LogTemp, Log, TEXT("%s"), *(InProperty->GetFName().ToString()));
+
     FArrayProperty* PropAsArray = CastField< FArrayProperty>(InProperty);
 
     if (PropAsArray == nullptr) return false; //Wasn't actually an array
@@ -109,7 +141,7 @@ bool FHNE_AssetImporter::MakeArrayNodeRecursive(UEdGraphPin* FromPin, FProperty*
 
         for (int i = 0; i < ChildObjects->Num(); ++i) {
             int BranchHeight = 0;
-            FHNE_AssetImporter::MakeChildNodeRecursive(ArrayNode->GetPinAt(i + 1), (*ChildObjects)[i], NextNodePos, Margins, BranchHeight);
+            FHNE_AssetImporter::MakeChildNodeRecursive(ArrayNode->GetPinAt(i + 1), (*ChildObjects)[i], ConnectionTracker, NextNodePos, Margins, BranchHeight);
             NextNodePos.Y += BranchHeight + Margins.Y;
             BranchHeightTotal += BranchHeight + Margins.Y;
         }
@@ -117,18 +149,23 @@ bool FHNE_AssetImporter::MakeArrayNodeRecursive(UEdGraphPin* FromPin, FProperty*
     }
     else {
         // get connection tracker for subcategory
+        ConnectionTracker->RegisterArrayPins(ArrayNode->Pins, PropAsArray, InObject);
     }
 
+
     OutBranchHeight = std::max(ArrayNode->NodeHeight, BranchHeightTotal);
+
+
+    UE_LOG(LogTemp, Log, TEXT("Finished branch"));
 
     return true;
 }
 
 
-bool FHNE_AssetImporter::MakeChildNodeRecursive(UEdGraphPin* FromPin, UObject* InObject, FVector2D NodePos, FVector2D Margins, int& OutBranchHeight)
+bool FHNE_AssetImporter::MakeChildNodeRecursive(UEdGraphPin* FromPin, UObject* InObject, TSharedPtr<FHNE_ConnectionTracker> ConnectionTracker, FVector2D NodePos, FVector2D Margins, int& OutBranchHeight)
 {
     if (InObject == nullptr) return true;
-    if (!InObject->GetClass()->ImplementsInterface(UHierarchicalEditInterface::StaticClass())) {
+    if (!(InObject->GetClass())->ImplementsInterface(UHierarchicalEditInterface::StaticClass())) {
         return false;
     }
 
@@ -159,24 +196,25 @@ bool FHNE_AssetImporter::MakeChildNodeRecursive(UEdGraphPin* FromPin, UObject* I
     NextNodePos.X += Result->NodeWidth + Margins.X;
 
     for (UEdGraphPin* Pin : Result->Pins) {
-        if (Pin->Direction != EGPD_Output) continue;
-
 
         FEdGraphPinType PinType = Pin->PinType;
+        if (PinType.PinSubCategory != UHierarchicalGraphSchema::SC_ChildNode && PinType.ContainerType != EPinContainerType::Array) {
+            ConnectionTracker->RegisterValuePin(Pin, Result->GetInnerObject());
+        }
+
+        if (Pin->Direction != EGPD_Output) continue;
+
 
         FProperty* OutProp = Result->InnerClass->FindPropertyByName(Pin->GetFName());
 
         int BranchHeight = 0;
 
         if (PinType.ContainerType == EPinContainerType::Array) {
-            FHNE_AssetImporter::MakeArrayNodeRecursive(Pin, OutProp, InObject, NextNodePos, Margins, BranchHeight);
+            FHNE_AssetImporter::MakeArrayNodeRecursive(Pin, OutProp, InObject, ConnectionTracker, NextNodePos, Margins, BranchHeight);
         }
         else if (PinType.PinSubCategory == UHierarchicalGraphSchema::SC_ChildNode) {
-            UObject* ChildObject = OutProp->ContainerPtrToValuePtr<UObject>(InObject);
-            FHNE_AssetImporter::MakeChildNodeRecursive(Pin, ChildObject, NextNodePos, Margins, BranchHeight);
-        }
-        else {
-            // get connection tracker for subcategory
+            UObject** ChildObject = OutProp->ContainerPtrToValuePtr<UObject*>(InObject);
+            FHNE_AssetImporter::MakeChildNodeRecursive(Pin, *ChildObject, ConnectionTracker, NextNodePos, Margins, BranchHeight);
         }
 
         NextNodePos.Y += BranchHeight + Margins.Y;
@@ -184,6 +222,9 @@ bool FHNE_AssetImporter::MakeChildNodeRecursive(UEdGraphPin* FromPin, UObject* I
     }
 
     OutBranchHeight = std::max(Result->NodeHeight, BranchHeightTotal);
+
+
+    UE_LOG(LogTemp, Log, TEXT("Finished branch"));
 
     return true;
 }

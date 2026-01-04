@@ -88,7 +88,7 @@ void FHierarchicalEditorAppMode::FillToolbar(FToolBarBuilder& ToolbarBuilder)
 					UHierarchicalEditAsset* WorkingAsset = PinnedApp->GetWorkingAsset();
 
 					FOpenAssetDialogConfig OpenAssetDialogConfig;
-					OpenAssetDialogConfig.DialogTitleOverride = NSLOCTEXT("", "SaveAssetDialogTitle", "Save Asset As");
+					OpenAssetDialogConfig.DialogTitleOverride = NSLOCTEXT("", "OpenAssetDialogTitle", "Select Asset to import");
 					OpenAssetDialogConfig.DefaultPath = WorkingAsset->GetPackage()->GetFName().ToString();
 					OpenAssetDialogConfig.bAllowMultipleSelection = false;
 

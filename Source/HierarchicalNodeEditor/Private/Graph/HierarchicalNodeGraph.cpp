@@ -165,7 +165,7 @@ UEdGraphNode* FNewArrayNodeAction::PerformAction(UEdGraph* ParentGraph, UEdGraph
 	Result->InitializeNode();
 
 	if (FromPin != nullptr && FromPin->Direction == EGPD_Output) {
-		UEdGraphPin* InputPin = Result->FindPin(NAME_None, EGPD_Input);
+		UEdGraphPin* InputPin = Result->FindPin(FName("Input"), EGPD_Input);
 		ParentGraph->GetSchema()->TryCreateConnection(FromPin, InputPin);
 	}
 

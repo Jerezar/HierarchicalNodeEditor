@@ -43,7 +43,7 @@ void UHierarchicalStateNode::SetUpInputPins()
 	this->CreatePin(
 		EGPD_Input,
 		PinType,
-		FName("StateID")
+		FName("UniqueId")
 	);
 }
 

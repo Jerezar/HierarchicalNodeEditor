@@ -127,21 +127,41 @@ UObject* UHierarchicalNode_Base::GetFinalizedAssetRecursive() const
 	return OutObject;
 }
 
+//Sets this node's inner object to be a duplicate of the input object, if the class matches exactly. 
 void UHierarchicalNode_Base::SetInnerObject(UObject* InObject)
 {
 	if (InObject->GetClass() != InnerClass) return;
 
-	TArray<FString> PinNames;
+	InnerObject = DuplicateObject(InObject, this);
+	CopyPinValues(InObject);
+}
+
+//Copies values corresponding to a pin from the input object to this node's inner object. Intended to preserve FGuids after DuplicateObject calls. ClearOutPinValues should probably be called at some later point.
+void UHierarchicalNode_Base::CopyPinValues(UObject* InObject) {
 	for (UEdGraphPin* Pin : Pins) {
-		PinNames.Add(Pin->GetName());
+		FProperty* Prop = InnerClass->FindPropertyByName(Pin->GetFName());
+
+		if (Prop == nullptr) continue;
+
+		void* ValueDestination = Prop->ContainerPtrToValuePtr<void>(InnerObject);
+		void* ValueSource = Prop->ContainerPtrToValuePtr<void>(InObject);
+
+		Prop->CopyCompleteValue(ValueDestination, ValueSource);
+
+
+
+		UE_LOG(LogTemp, Log, TEXT("%s copied: %d"), *(Pin->GetFName().ToString()), Prop->Identical(ValueDestination, ValueSource));
 	}
+}
 
-	for (TFieldIterator<FProperty> PropIter(InnerClass); PropIter; ++PropIter) {
 
-		if (PinNames.Contains(PropIter->GetFName().ToString())) continue;
+//Clears all FProperty values of the inner object that correspond to the output pins of this node.
+void UHierarchicalNode_Base::ClearOutPinValues(){
+	TArray<UEdGraphPin*> OutputPins = Pins.FilterByPredicate([](UEdGraphPin* InspectPin) {return InspectPin->Direction == EGPD_Output; });
 
-		void* ValSource = PropIter->ContainerPtrToValuePtr<void>(InObject);
-		void* ValDestination = PropIter->ContainerPtrToValuePtr<void>(InnerObject);
-		PropIter->CopyCompleteValue(ValDestination, ValSource);
+	for (UEdGraphPin* Pin : OutputPins) {
+		FProperty* Prop = InnerClass->FindPropertyByName(Pin->GetFName());
+		void* PropValue = Prop->ContainerPtrToValuePtr<void>(InnerObject);
+		Prop->ClearValue(PropValue);
 	}
 }

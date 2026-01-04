@@ -19,6 +19,8 @@ public:
 	UObject* GetInnerObject() const { return InnerObject; }
 	virtual UObject* GetFinalizedAssetRecursive() const;
 	virtual void SetInnerObject(UObject* InObject);
+	virtual void ClearOutPinValues();
+	virtual void CopyPinValues(UObject* InObject);
 
 protected:
 	virtual void SetUpInputPins() {};
