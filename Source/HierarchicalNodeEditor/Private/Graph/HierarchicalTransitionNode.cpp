@@ -26,10 +26,6 @@ UObject* UHierarchicalTransitionNode::GetFinalizedAssetRecursive() const
 	//No caching, 
 	UObject* OutObject = UHierarchicalChildNode::GetFinalizedAssetRecursive();
 
-	UActorState* OutAsState = Cast< UActorState>(OutObject);
-	UActorState* InnerAsState = Cast< UActorState>(GetInnerObject());
-	OutAsState->UniqueId = InnerAsState->UniqueId;
-
 	for (UEdGraphPin* Pin : Pins) {
 		if (Pin->Direction != EGPD_Output) continue; // only consider output pins
 		if (!Pin->LinkedTo.Num()) continue; //only consider pins with actual connections
@@ -75,4 +71,11 @@ UObject* UHierarchicalTransitionNode::GetFinalizedAssetRecursive() const
 	}
 
 	return OutObject;
+}
+
+TArray<FString> UHierarchicalTransitionNode::GetFieldNamesToIgnore() const
+{
+	TArray<FString> IgnoreNames = UHierarchicalChildNode::GetFieldNamesToIgnore();
+	IgnoreNames.Add("CachedState");
+	return IgnoreNames;
 }
