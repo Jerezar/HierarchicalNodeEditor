@@ -104,5 +104,6 @@ void FHNE_StateIDConnectionTracker::SetErrorMessages(TArray<UEdGraphPin*> Pins, 
     for (UEdGraphPin* Pin : Pins) {
         UEdGraphNode* OwningNode = Pin->GetOwningNode();
         OwningNode->ErrorMsg += ErrorMessage;
+        OwningNode->bHasCompilerMessage = true;
     }
 }

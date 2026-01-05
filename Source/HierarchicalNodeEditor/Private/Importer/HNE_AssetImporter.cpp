@@ -98,6 +98,7 @@ bool FHNE_AssetImporter::ImportObjectIntoGraph(UHierarchicalEditAsset* GraphAsse
         Node->ClearOutPinValues();
     }
 
+    GraphToOverwrite->NotifyGraphChanged();
 
     return true;
 }
