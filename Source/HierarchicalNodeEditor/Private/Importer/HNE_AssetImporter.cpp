@@ -42,6 +42,7 @@ bool FHNE_AssetImporter::ImportObjectIntoGraph(UHierarchicalEditAsset* GraphAsse
         return false;
     }
 
+
     //InObject = DuplicateObject(InObject, GetTransientPackage());
     //Can't do that here, messes with FGUIDs; instead done inside Node->SetInnerObject
 
@@ -68,21 +69,13 @@ bool FHNE_AssetImporter::ImportObjectIntoGraph(UHierarchicalEditAsset* GraphAsse
 
     //Create new root node
 
-    UE_LOG(LogTemp, Log, TEXT("Creating new root"));
-    FVector2D Margins(256, 64);
-    FVector2D NextNodePos(0, 0);
-
     UHierarchicalRootNode* RootNode = NewObject< UHierarchicalRootNode>(GraphToOverwrite, UHierarchicalRootNode::StaticClass());
     RootNode->InnerClass = InObject->GetClass();
-    RootNode->NodePosX = NextNodePos.X;
-    RootNode->NodePosY = NextNodePos.Y;
 
     GraphToOverwrite->AddNode(RootNode);
 
     RootNode->InitializeNode();
     RootNode->SetInnerObject(InObject);
-
-    NextNodePos.X += RootNode->NodeWidth + Margins.X;
 
 
     //Create tasks for branches
@@ -91,7 +84,7 @@ bool FHNE_AssetImporter::ImportObjectIntoGraph(UHierarchicalEditAsset* GraphAsse
     TSharedPtr<FBranchExtentWrapper> OuterMostWrapper = MakeShared<FBranchExtentWrapper>();
     OuterMostWrapper->Node = RootNode;
 
-    int32 StartIndex = BranchWrappers.Add(OuterMostWrapper);
+    BranchWrappers.Add(OuterMostWrapper);
 
     for (UEdGraphPin* Pin : RootNode->Pins) {
 
@@ -149,7 +142,7 @@ bool FHNE_AssetImporter::ImportObjectIntoGraph(UHierarchicalEditAsset* GraphAsse
         }
     }
 
-    int MarginX = 128;
+    int MarginX = 256;
     int MarginY = 64;
 
     // discover branch heights
@@ -158,17 +151,17 @@ bool FHNE_AssetImporter::ImportObjectIntoGraph(UHierarchicalEditAsset* GraphAsse
         TSharedPtr<FBranchExtentWrapper> Wrapper = BranchWrappers[i];
 
         for (TSharedPtr<FBranchExtentWrapper> ChildWrapper : Wrapper->ChildWrappers) {
-            Wrapper->BranchHeight += ChildWrapper->Node->NodeHeight + MarginY;
+            Wrapper->BranchHeight += ChildWrapper->BranchHeight + MarginY;
         }
 
-        Wrapper->BranchHeight = std::max(Wrapper->BranchHeight, Wrapper->Node->NodeHeight);
+        Wrapper->BranchHeight = std::max(Wrapper->BranchHeight, Wrapper->Node->NodeHeight + MarginY);
     }
 
     for (TSharedPtr<FBranchExtentWrapper> Wrapper : BranchWrappers) {
         int OffsetY = 0;
         UEdGraphNode* Node = Wrapper->Node;
         for (TSharedPtr<FBranchExtentWrapper> ChildWrapper : Wrapper->ChildWrappers) {
-            ChildWrapper->Node->NodePosX = Node->NodePosX + Node->NodeWidth + MarginX;
+            ChildWrapper->Node->NodePosX = Node->NodePosX + std::max(Node->NodeWidth, MarginX);
             ChildWrapper->Node->NodePosY = Node->NodePosY + OffsetY;
 
             OffsetY += ChildWrapper->BranchHeight;
@@ -229,7 +222,7 @@ bool FHNE_AssetImporter::HandleArrayBranchTask(FBranchImportTask Task, TQueue<FB
     TSharedPtr<FBranchExtentWrapper> BranchWrapper = MakeShared< FBranchExtentWrapper>();
     BranchWrapper->Node = ArrayNode;
 
-
+    OutBranchWrappers.Add(BranchWrapper);
     Task.ParentBranchWrapper->ChildWrappers.Add(BranchWrapper);
 
     if (PinType.PinSubCategory == UHierarchicalGraphSchema::SC_ChildNode) {
@@ -304,7 +297,7 @@ bool FHNE_AssetImporter::HandleChildBranchTask(FBranchImportTask Task, TQueue<FB
     TSharedPtr<FBranchExtentWrapper> BranchWrapper = MakeShared< FBranchExtentWrapper>();
     BranchWrapper->Node = Result;
 
-
+    OutBranchWrappers.Add(BranchWrapper);
     Task.ParentBranchWrapper->ChildWrappers.Add(BranchWrapper);
 
 
