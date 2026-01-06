@@ -48,8 +48,9 @@ void UHierarchicalEditAsset::CompileGraphToAsset()
 
 		UObject* FinalizedAsset = RootNode->GetFinalizedAssetRecursive();
 
+
 		TArray<UObject*> SubObjectsToReparent;
-		GetObjectsWithOuter(FinalizedAsset, SubObjectsToReparent);
+		GetObjectsWithOuter(FinalizedAsset, SubObjectsToReparent, /*bIncludeNestedObjects*/ false);
 
 		for (UObject* SubObject : SubObjectsToReparent) {
 			SubObject->Rename(nullptr, OutAsset);
@@ -61,6 +62,7 @@ void UHierarchicalEditAsset::CompileGraphToAsset()
 				/*Src*/PropIter->ContainerPtrToValuePtr<void>(FinalizedAsset)
 			);
 		}
+
 
 		UE_LOG(LogTemp, Log, TEXT("Finished overwriting."));
 		OutAsset->Modify();
