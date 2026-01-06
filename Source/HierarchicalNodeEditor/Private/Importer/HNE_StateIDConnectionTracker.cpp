@@ -1,21 +1,19 @@
 #include "HNE_StateIDConnectionTracker.h"
 #include "ActorStateID.h"
 
-bool FHNE_StateIDConnectionTracker::RegisterValuePin(UEdGraphPin* InPin, UObject* InObject)
+bool FHNE_StateIDConnectionTracker::RegisterValuePin(UEdGraphPin* InPin, FProperty* InProperty, void* ValuePtr)
 {
     UE_LOG(LogTemp, Log, TEXT("Registering id pin: %s"), *(InPin->GetFName().ToString()));
 
-    FProperty* Property = InObject->GetClass()->FindPropertyByName(InPin->GetFName());
+    if (InProperty == nullptr) return false;
 
-    if (Property == nullptr) return false;
-
-    FStructProperty* PropAsStruct = CastField< FStructProperty>(Property);
+    FStructProperty* PropAsStruct = CastField< FStructProperty>(InProperty);
 
     if (PropAsStruct == nullptr) return false;
 
     if (PropAsStruct->Struct != TBaseStructure<FActorStateID>::Get()) return false;
 
-    FActorStateID* StateID = PropAsStruct->ContainerPtrToValuePtr< FActorStateID>(InObject);
+    FActorStateID* StateID = (FActorStateID * )ValuePtr;
 
     FGuid StateIDInner = StateID->Guid;
 
@@ -32,7 +30,7 @@ bool FHNE_StateIDConnectionTracker::RegisterValuePin(UEdGraphPin* InPin, UObject
     return true;
 }
 
-bool FHNE_StateIDConnectionTracker::RegisterArrayPins(TArray<UEdGraphPin*> InPins, FArrayProperty* InProperty, UObject* InObject)
+bool FHNE_StateIDConnectionTracker::RegisterArrayPins(TArray<UEdGraphPin*> InPins, FArrayProperty* InProperty, void* ValuePtr)
 {
     UE_LOG(LogTemp, Log, TEXT("Registering id array: %s"), *(InProperty->GetFName().ToString()));
 
@@ -44,7 +42,7 @@ bool FHNE_StateIDConnectionTracker::RegisterArrayPins(TArray<UEdGraphPin*> InPin
 
     if (InnerAsStruct->Struct != TBaseStructure<FActorStateID>::Get()) return false;
 
-    TArray<FActorStateID>* StateIDs = InProperty->ContainerPtrToValuePtr< TArray<FActorStateID>>(InObject);
+    TArray<FActorStateID>* StateIDs = (TArray<FActorStateID>*)ValuePtr;
 
     if (InPins.Num() != StateIDs->Num()) return false;
 

@@ -54,8 +54,6 @@ void UHierarchicalStateNode::SetUpOutputPins()
 
 	for (TFieldIterator<FProperty> PropIterator(InnerClass); PropIterator; ++PropIterator) {
 
-		UE_LOG(LogTemp, Warning, TEXT("Checking %s"), *(PropIterator->GetName()))
-
 		if (GetFieldNamesToIgnore().Contains(PropIterator->GetName())) continue;
 
 		bool bIsArrayField = false;
@@ -63,7 +61,6 @@ void UHierarchicalStateNode::SetUpOutputPins()
 
 		FArrayProperty* TestArray = CastField<FArrayProperty>(*PropIterator);
 		if (TestArray != nullptr) {
-			UE_LOG(LogTemp, Warning, TEXT("%s is ArrayProperty."), *(PropIterator->GetName()))
 				TestProperty = TestArray->Inner;
 			bIsArrayField = true;
 		}
@@ -71,8 +68,6 @@ void UHierarchicalStateNode::SetUpOutputPins()
 		FStructProperty* TestStructProperty = CastField<FStructProperty>(TestProperty);
 
 		if (TestStructProperty == nullptr) continue;
-
-		UE_LOG(LogTemp, Warning, TEXT("%s is StructProperty."), *(PropIterator->GetName()))
 
 			if (TestStructProperty->Struct == TBaseStructure<FActorStateID>::Get()) {
 

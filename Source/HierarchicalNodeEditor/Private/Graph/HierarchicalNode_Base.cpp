@@ -31,14 +31,11 @@ void UHierarchicalNode_Base::SetUpOutputPins()
 
 		if (GetFieldNamesToIgnore().Contains(PropIterator->GetName())) continue;
 
-		UE_LOG(LogTemp, Warning, TEXT("Checking %s"), *(PropIterator->GetName()))
-
 		bool bIsArrayField = false;
 		FProperty* TestProperty = *PropIterator;
 
 		FArrayProperty* TestArray = CastField<FArrayProperty>(*PropIterator);
 		if (TestArray != nullptr) {
-			UE_LOG(LogTemp, Warning, TEXT("%s is ArrayProperty."), *(PropIterator->GetName()))
 			TestProperty = TestArray->Inner;
 			bIsArrayField = true;
 		}
@@ -46,8 +43,6 @@ void UHierarchicalNode_Base::SetUpOutputPins()
 		FObjectPropertyBase* TestObjectProperty = CastField<FObjectPropertyBase>(TestProperty);
 
 		if (TestObjectProperty == nullptr) continue;
-
-		UE_LOG(LogTemp, Warning, TEXT("%s is ObjectProperty."), *(PropIterator->GetName()))
 
 		if (TestObjectProperty->PropertyClass->ImplementsInterface(UHierarchicalEditInterface::StaticClass())) {
 
