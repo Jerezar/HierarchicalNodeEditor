@@ -17,7 +17,7 @@
 	"Modules": [
 		{
 			"Name": "HierarchicalNodeEditor",
-			"Type": "Editor",
+			"Type": "EditorNoCommandlet",
 			"LoadingPhase": "Default"
 		}
 	]
