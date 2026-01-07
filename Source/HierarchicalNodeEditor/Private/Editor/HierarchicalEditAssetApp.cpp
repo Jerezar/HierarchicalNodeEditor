@@ -86,9 +86,11 @@ void FHierarchicalEditAssetApp::DeleteGraphAction()
 	FGraphPanelSelectionSet SelectedNodes = _WorkingGraphUI->GetSelectedNodes();
 
 	for (UObject* SelectedObject : SelectedNodes) {
-		UHNE_Node* SelectionAsNode = Cast< UHNE_Node>(SelectedObject);
-		if (SelectionAsNode != nullptr) {
+		if (UHNE_Node* SelectionAsNode = Cast< UHNE_Node>(SelectedObject)) {
 			SelectionAsNode->OnDeleteNodeAction();
+		}
+		else if (UEdGraphNode_Comment* SelectionAsComment = Cast< UEdGraphNode_Comment>(SelectedObject)) {
+			GetWorkingGraph()->RemoveNode(SelectionAsComment);
 		}
 	}
 	

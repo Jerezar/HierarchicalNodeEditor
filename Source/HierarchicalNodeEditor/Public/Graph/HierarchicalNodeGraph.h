@@ -81,6 +81,20 @@ public:
 	virtual UEdGraphNode* PerformAction(UEdGraph* ParentGraph, UEdGraphPin* FromPin, const FVector2D Location, bool bSelectNewNode = true) override;
 };
 
+//---- COMMENT ACTION ----
+
+USTRUCT()
+struct FHNENewCommentAction : public FEdGraphSchemaAction {
+	GENERATED_BODY()
+public:
+	FHNENewCommentAction();
+	FHNENewCommentAction(FText InNodeCategory, FText InMenuDescription, FText InToolTip, const int32 InGrouping)
+		: FEdGraphSchemaAction(InNodeCategory, InMenuDescription, InToolTip, InGrouping) {
+	}
+
+	virtual UEdGraphNode* PerformAction(UEdGraph* ParentGraph, UEdGraphPin* FromPin, const FVector2D Location, bool bSelectNewNode = true) override;
+};
+
 
 //CONNECTION DRAWING POLICY
 

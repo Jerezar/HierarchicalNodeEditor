@@ -6,6 +6,7 @@
 #include "Graph/HNE_RerouteNode.h"
 #include "Graph/HNE_GraphUtils.h"
 #include "SGraphNodeKnot.h"
+#include "EdGraphNode_Comment.h"
 
 const TMap<FName, FLinearColor> PinTypeColorMap{
 	{UHierarchicalGraphSchema::SC_ChildNode, FLinearColor(FColor::Cyan)},
@@ -78,6 +79,17 @@ void UHierarchicalGraphSchema::GetGraphContextActions(FGraphContextMenuBuilder& 
 
 		ContextMenuBuilder.AddAction(NewArrayAction);
 	}
+
+	TSharedPtr< FHNENewCommentAction> NewCommentAction(
+		new FHNENewCommentAction(
+			FText::FromString(TEXT("Comment")),
+			FText::FromString(TEXT("Add comment")),
+			FText::FromString(TEXT("Makes a new comment box")),
+			0
+		)
+	);
+
+	ContextMenuBuilder.AddAction(NewCommentAction);
 }
 
 const FPinConnectionResponse UHierarchicalGraphSchema::CanCreateConnection(const UEdGraphPin* A, const UEdGraphPin* B) const
@@ -277,4 +289,22 @@ TSharedPtr<class SGraphNode> FHNE_NodeFactory::CreateNode(UEdGraphNode* InNode) 
 		return SNew(SGraphNodeKnot, AsReroute);
 	}
 	return nullptr;
+}
+
+FHNENewCommentAction::FHNENewCommentAction()
+{
+
+}
+
+UEdGraphNode* FHNENewCommentAction::PerformAction(UEdGraph* ParentGraph, UEdGraphPin* FromPin, const FVector2D Location, bool bSelectNewNode)
+{
+	FGraphNodeCreator<UEdGraphNode_Comment> NodeCreator(*ParentGraph);
+	UEdGraphNode_Comment* CommentNode = NodeCreator.CreateNode();
+
+	CommentNode->NodePosX = Location.X;
+	CommentNode->NodePosY = Location.Y;
+
+	NodeCreator.Finalize();
+
+	return CommentNode;
 }
