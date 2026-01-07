@@ -133,6 +133,36 @@ FConnectionDrawingPolicy* UHierarchicalGraphSchema::CreateConnectionDrawingPolic
 	return new FHNE_ConnectionDrawingPolicy(InBackLayerID, InFrontLayerID, InZoomFactor, InClippingRect, InDrawElements, InGraphObj);
 }
 
+void UHierarchicalGraphSchema::OnPinConnectionDoubleCicked(UEdGraphPin* PinA, UEdGraphPin* PinB, const FVector2D& GraphPosition) const
+{
+	if (PinA == nullptr && PinB == nullptr) return;
+
+	UEdGraphPin* InspectPin = (PinA == nullptr) ? PinA : PinB;
+
+	UEdGraph* ParentGraph = InspectPin->GetOwningNode()->GetGraph();
+
+	UHNE_RerouteNode* Result = NewObject< UHNE_RerouteNode >(ParentGraph);
+
+	Result->NodePosX = GraphPosition.X - (Result->NodeHeight * 0.5);
+	Result->NodePosY = GraphPosition.Y - (Result->NodeWidth * 0.5);
+
+	ParentGraph->Modify();
+	ParentGraph->AddNode(Result, true, true);
+
+	Result->PinTypeTemplate = FEdGraphPinType(InspectPin->PinType);
+	Result->InitializeNode();
+
+	if (PinA != nullptr) {
+		UEdGraphPin* TargetNode = Result->FindPin(NAME_None, (PinA->Direction == EGPD_Output) ? EGPD_Input : EGPD_Output);
+		TryCreateConnection(PinA, TargetNode);
+	}
+
+	if (PinB != nullptr) {
+		UEdGraphPin* TargetNode = Result->FindPin(NAME_None, (PinB->Direction == EGPD_Output) ? EGPD_Input : EGPD_Output);
+		TryCreateConnection(PinB, TargetNode);
+	}
+}
+
 FNewChildNodeAction::FNewChildNodeAction()
 {
 }
@@ -225,12 +255,11 @@ FHNE_ConnectionDrawingPolicy::FHNE_ConnectionDrawingPolicy(int32 InBackLayerID, 
 
 void FHNE_ConnectionDrawingPolicy::DetermineWiringStyle(UEdGraphPin* OutputPin, UEdGraphPin* InputPin, FConnectionParams& Params)
 {
-	if (OutputPin == nullptr || InputPin == nullptr) return;
+	if (OutputPin == nullptr && InputPin == nullptr) return;
 
 	FConnectionDrawingPolicy::DetermineWiringStyle(OutputPin, InputPin, Params);
 
-	UEdGraphPin* InspectPin = OutputPin;
-	if (OutputPin == nullptr) InspectPin = InputPin;
+	UEdGraphPin* InspectPin = (OutputPin == nullptr) ? OutputPin : InputPin;
 	
 	FEdGraphPinType PinType = InspectPin->PinType;
 

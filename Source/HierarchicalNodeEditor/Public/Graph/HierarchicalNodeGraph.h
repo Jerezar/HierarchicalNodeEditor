@@ -23,10 +23,7 @@ public: //UEdGraphSchema
 		FSlateWindowElementList& InDrawElements,
 		UEdGraph* InGraphObj
 	) const override;
-	/*
 	virtual void OnPinConnectionDoubleCicked(UEdGraphPin* PinA, UEdGraphPin* PinB, const FVector2D& GraphPosition) const override;
-	
-	*/
 
 public:
 	static const FName SC_ChildNode; //SubCategoryObject is the Class of the associated Object.
