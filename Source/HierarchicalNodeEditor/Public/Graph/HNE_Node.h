@@ -1,6 +1,7 @@
 #pragma once 
 
 #include "EdGraph/EdGraphNode.h"
+#include "HierarchicalNodeGraph.h"
 #include "HNE_Node.generated.h"
 
 UCLASS()
@@ -15,6 +16,9 @@ public: //UEdGraphNode
 	virtual FLinearColor GetNodeTitleColor() const override { return FLinearColor(FColor::Black); }
 	virtual bool CanUserDeleteNode() const override { return true; }
 	virtual void GetNodeContextMenuActions(UToolMenu* Menu, UGraphNodeContextMenuContext* Context) const override;
+	virtual bool CanCreateUnderSpecifiedSchema(const UEdGraphSchema* Schema) const override { 
+		return (Schema->GetClass() == UHierarchicalGraphSchema::StaticClass());
+	}
 
 public:
 	virtual void InitializeNode();
