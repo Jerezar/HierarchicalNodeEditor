@@ -6,6 +6,11 @@
 #include "Graph/HNE_RerouteNode.h"
 #include "Graph/HNE_GraphUtils.h"
 
+const TMap<FName, FLinearColor> PinTypeColorMap{
+	{UHierarchicalGraphSchema::SC_ChildNode, FLinearColor(FColor::Cyan)},
+	{UHierarchicalGraphSchema::SC_StateTransition, FLinearColor(FColor::Orange)}
+};
+
 void UHierarchicalGraphSchema::GetGraphContextActions(FGraphContextMenuBuilder& ContextMenuBuilder) const
 {
 
@@ -114,6 +119,20 @@ const FPinConnectionResponse UHierarchicalGraphSchema::CanCreateConnection(const
 	return FPinConnectionResponse(Break, "");
 }
 
+FLinearColor UHierarchicalGraphSchema::GetPinTypeColor(const FEdGraphPinType& PinType) const
+{
+	const FLinearColor* PinTypeColor = PinTypeColorMap.Find(PinType.PinSubCategory);
+
+	if (PinTypeColor != nullptr) return *PinTypeColor;
+
+	return FLinearColor();
+}
+
+FConnectionDrawingPolicy* UHierarchicalGraphSchema::CreateConnectionDrawingPolicy(int32 InBackLayerID, int32 InFrontLayerID, float InZoomFactor, const FSlateRect& InClippingRect, FSlateWindowElementList& InDrawElements, UEdGraph* InGraphObj) const
+{
+	return new FHNE_ConnectionDrawingPolicy(InBackLayerID, InFrontLayerID, InZoomFactor, InClippingRect, InDrawElements, InGraphObj);
+}
+
 FNewChildNodeAction::FNewChildNodeAction()
 {
 }
@@ -196,4 +215,28 @@ UEdGraphNode* FNewRerouteNodeAction::PerformAction(UEdGraph* ParentGraph, UEdGra
 	}
 
 	return Result;
+}
+
+FHNE_ConnectionDrawingPolicy::FHNE_ConnectionDrawingPolicy(int32 InBackLayerID, int32 InFrontLayerID, float ZoomFactor, const FSlateRect& InClippingRect, FSlateWindowElementList& InDrawElements, UEdGraph* InGraphObj)
+	:FConnectionDrawingPolicy(InBackLayerID, InFrontLayerID, ZoomFactor, InClippingRect, InDrawElements),
+	Graph(InGraphObj)
+{
+}
+
+void FHNE_ConnectionDrawingPolicy::DetermineWiringStyle(UEdGraphPin* OutputPin, UEdGraphPin* InputPin, FConnectionParams& Params)
+{
+	if (OutputPin == nullptr || InputPin == nullptr) return;
+
+	FConnectionDrawingPolicy::DetermineWiringStyle(OutputPin, InputPin, Params);
+
+	UEdGraphPin* InspectPin = OutputPin;
+	if (OutputPin == nullptr) InspectPin = InputPin;
+	
+	FEdGraphPinType PinType = InspectPin->PinType;
+
+	const FLinearColor* PinTypeColor = PinTypeColorMap.Find(PinType.PinSubCategory);
+
+	if (PinTypeColor != nullptr) Params.WireColor = *PinTypeColor;
+
+	if (PinType.PinSubCategory == UHierarchicalGraphSchema::SC_ChildNode) Params.WireThickness *= 1.1;
 }

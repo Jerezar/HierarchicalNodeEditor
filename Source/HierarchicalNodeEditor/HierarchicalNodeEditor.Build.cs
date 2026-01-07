@@ -43,8 +43,12 @@ public class HierarchicalNodeEditor : ModuleRules
 				"AssetTools",
 				"UnrealEd",
 				"ToolMenus",
-				"PropertyEditor"
-			}
+                "PropertyEditor",
+
+                "ClassViewer",
+
+				"GraphEditor"
+            }
 			);
 		
 		
@@ -52,7 +56,6 @@ public class HierarchicalNodeEditor : ModuleRules
 			new string[]
 			{
 				// ... add any modules that your module loads dynamically here ...
-				"ClassViewer"
             }
 			);
 	}
