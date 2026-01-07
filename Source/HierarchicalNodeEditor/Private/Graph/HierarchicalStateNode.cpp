@@ -30,6 +30,7 @@ void UHierarchicalStateNode::OnRenameNode(const FString& NewName)
 	UActorState* InnerState = Cast< UActorState>(GetInnerObject());
 	InnerState->Modify();
 	InnerState->NameID = FName(NewName);
+	GetGraph()->NotifyGraphChanged();
 }
 
 void UHierarchicalStateNode::SetUpInputPins()

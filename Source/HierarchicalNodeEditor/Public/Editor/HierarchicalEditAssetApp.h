@@ -31,6 +31,8 @@ public:
 	void SetWorkingGraphUI(TSharedPtr<SGraphEditor> WorkingGraphUI) { _WorkingGraphUI = WorkingGraphUI; }
 	void SetNodeDetailsView(TSharedPtr<class IDetailsView> NodeDetailsView);
 	void OnGraphSelectionChanged(const FGraphPanelSelectionSet& Selection);
+	void OnNodeTitleComitted(const FText& NewText, ETextCommit::Type CommitInfo, UEdGraphNode* NodeBeingChanged);
+	//bool OnVerifyNodeTitleComitted(const FText& NewText, UEdGraphNode* NodeBeingChanged, FText& OutErrorMessage);
 
 protected:
 	void DeleteGraphAction();

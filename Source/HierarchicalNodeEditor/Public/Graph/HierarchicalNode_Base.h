@@ -10,9 +10,12 @@ class UHierarchicalNode_Base : public UHNE_Node
 	GENERATED_BODY()
 
 public:
-	virtual FText GetNodeTitle(ENodeTitleType::Type TitelType) const override { return FText::FromName(InnerClass->GetFName()); }
+	virtual FText GetNodeTitle(ENodeTitleType::Type TitelType) const override;
 	virtual FLinearColor GetNodeTitleColor() const override { return FLinearColor(FColor::Cyan); }
 	virtual bool CanUserDeleteNode() const override { return true; }
+
+	virtual bool GetCanRenameNode() const override { return true; }
+	virtual void OnRenameNode(const FString& NewName) override;
 
 public:
 	virtual void InitializeNode() override;
@@ -38,6 +41,9 @@ public:
 private:
 	UPROPERTY()
 	UObject* InnerObject = nullptr;
+
+	UPROPERTY()
+	FName CustomName = NAME_None;
 };
 
 template<typename TargetNodeClass>

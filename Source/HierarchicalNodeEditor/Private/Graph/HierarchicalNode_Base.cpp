@@ -6,6 +6,30 @@
 #include "HierarchicalEditInterface.h"
 //#include "UObject/PropertyOptional.h"
 
+void UHierarchicalNode_Base::OnRenameNode(const FString& NewName)
+{
+	UE_LOG(LogTemp, Log, TEXT("RENAMING NODE"));
+	CustomName = FName(NewName);
+	GetGraph()->NotifyGraphChanged();
+}
+
+FText UHierarchicalNode_Base::GetNodeTitle(ENodeTitleType::Type TitelType) const
+{
+	TArray<FString> TitleLines;
+
+	if (!CustomName.IsNone()) {
+		TitleLines.Add(CustomName.ToString());
+	}
+
+	if (TitelType != ENodeTitleType::EditableTitle || CustomName.IsNone()) {
+		TitleLines.Add(InnerClass->GetFName().ToString());
+	}
+
+	const FString Title = FString::Join(TitleLines, TEXT("\n"));
+
+	return FText::FromString(Title);
+}
+
 void UHierarchicalNode_Base::InitializeNode()
 {
 

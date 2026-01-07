@@ -21,6 +21,8 @@ TSharedRef<SWidget> FHierachicalGraphTabFactory::CreateTabBody(const FWorkflowTa
 
 	SGraphEditor::FGraphEditorEvents GraphEvents;
 	GraphEvents.OnSelectionChanged.BindRaw(App.Get(), &FHierarchicalEditAssetApp::OnGraphSelectionChanged);
+	GraphEvents.OnTextCommitted.BindRaw(App.Get(), &FHierarchicalEditAssetApp::OnNodeTitleComitted);
+	//GraphEvents.OnVerifyTextCommit.BindRaw(App.Get(), &FHierarchicalEditAssetApp::OnVerifyNodeTitleComitted);
 
 	TSharedPtr <SGraphEditor> GraphEditorUI = SNew(SGraphEditor)
 		.IsEditable(true)

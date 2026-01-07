@@ -65,6 +65,20 @@ void FHierarchicalEditAssetApp::OnGraphSelectionChanged(const FGraphPanelSelecti
 	}
 }
 
+void FHierarchicalEditAssetApp::OnNodeTitleComitted(const FText& NewText, ETextCommit::Type CommitInfo, UEdGraphNode* NodeBeingChanged)
+{
+	if (CommitInfo == ETextCommit::OnEnter && NodeBeingChanged != nullptr) {
+		NodeBeingChanged->OnRenameNode(NewText.ToString());
+	}
+}
+
+/*
+bool FHierarchicalEditAssetApp::OnVerifyNodeTitleComitted(const FText& NewText, UEdGraphNode* NodeBeingChanged, FText& OutErrorMessage)
+{
+	return true;
+}
+*/
+
 void FHierarchicalEditAssetApp::DeleteGraphAction()
 {
 	if (!_WorkingGraphUI.IsValid()) return;
