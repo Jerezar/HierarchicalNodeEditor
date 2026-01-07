@@ -255,7 +255,7 @@ FHNE_ConnectionDrawingPolicy::FHNE_ConnectionDrawingPolicy(int32 InBackLayerID, 
 
 void FHNE_ConnectionDrawingPolicy::DetermineWiringStyle(UEdGraphPin* OutputPin, UEdGraphPin* InputPin, FConnectionParams& Params)
 {
-	if (OutputPin == nullptr && InputPin == nullptr) return;
+	if (OutputPin == nullptr || InputPin == nullptr) return;
 
 	FConnectionDrawingPolicy::DetermineWiringStyle(OutputPin, InputPin, Params);
 
