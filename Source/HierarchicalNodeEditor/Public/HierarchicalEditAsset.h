@@ -9,7 +9,7 @@ struct FAssetTargetInfo {
 
 public:
 	
-	UPROPERTY(EditAnywhere, meta = (ToolTip = "The asset to edit. If not set, uses OutAssetName and OutAssetPath to create a new asset or find an existing one."))
+	UPROPERTY(EditAnywhere, meta = (ToolTip = "The asset to edit. If set to None, prompts creation of a new asset on compilation."))
 	UObject* OutAsset = nullptr;
 };
 
