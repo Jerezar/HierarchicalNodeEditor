@@ -5,6 +5,7 @@
 #include "HierarchicalArrayNode.h"
 #include "Graph/HNE_RerouteNode.h"
 #include "Graph/HNE_GraphUtils.h"
+#include "SGraphNodeKnot.h"
 
 const TMap<FName, FLinearColor> PinTypeColorMap{
 	{UHierarchicalGraphSchema::SC_ChildNode, FLinearColor(FColor::Cyan)},
@@ -268,4 +269,12 @@ void FHNE_ConnectionDrawingPolicy::DetermineWiringStyle(UEdGraphPin* OutputPin, 
 	if (PinTypeColor != nullptr) Params.WireColor = *PinTypeColor;
 
 	if (PinType.PinSubCategory == UHierarchicalGraphSchema::SC_ChildNode) Params.WireThickness *= 1.1;
+}
+
+TSharedPtr<class SGraphNode> FHNE_NodeFactory::CreateNode(UEdGraphNode* InNode) const
+{
+	if (UHNE_RerouteNode* AsReroute = Cast< UHNE_RerouteNode>(InNode)) {
+		return SNew(SGraphNodeKnot, AsReroute);
+	}
+	return nullptr;
 }

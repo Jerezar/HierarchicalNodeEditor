@@ -5,6 +5,8 @@
 #include "IAssetTools.h"
 #include "AssetToolsModule.h"
 
+#include "Graph/HierarchicalNodeGraph.h"
+
 #define LOCTEXT_NAMESPACE "FHierarchicalNodeEditorModule"
 
 void FHierarchicalNodeEditorModule::StartupModule()
@@ -14,12 +16,16 @@ void FHierarchicalNodeEditorModule::StartupModule()
 	EAssetTypeCategories::Type AssetType = AssetToolsModule.RegisterAdvancedAssetCategory(FName(TEXT("HierarchicalEditAsset")), FText::FromString("Hierarchical Edit Assets"));
 	TSharedPtr<FHierarchicalEditAssetAction> HierarchicalEditAssetAction = MakeShareable(new FHierarchicalEditAssetAction(AssetType));
 	AssetToolsModule.RegisterAssetTypeActions(HierarchicalEditAssetAction.ToSharedRef());
+
+	_NodeFactory = MakeShareable< FHNE_NodeFactory>( new FHNE_NodeFactory());
+	FEdGraphUtilities::RegisterVisualNodeFactory(_NodeFactory);
 }
 
 void FHierarchicalNodeEditorModule::ShutdownModule()
 {
 	// This function may be called during shutdown to clean up your module.  For modules that support dynamic reloading,
 	// we call this function before unloading the module.
+	FEdGraphUtilities::UnregisterVisualNodeFactory(_NodeFactory);
 }
 
 #undef LOCTEXT_NAMESPACE

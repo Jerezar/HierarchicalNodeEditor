@@ -3,6 +3,7 @@
 #include "CoreMinimal.h"
 #include "EdGraph/EdGraphSchema.h"
 #include "ConnectionDrawingPolicy.h"
+#include "EdGraphUtilities.h"
 #include "HierarchicalNodeGraph.generated.h"
 
 
@@ -102,4 +103,11 @@ public:
 	void DetermineWiringStyle(UEdGraphPin* OutputPin, UEdGraphPin* InputPin, /*inout*/ FConnectionParams& Params) override;
 
 	UEdGraph* Graph;
+};
+
+//
+struct FHNE_NodeFactory : public FGraphPanelNodeFactory
+{
+	~FHNE_NodeFactory() override {};
+	virtual TSharedPtr<class SGraphNode> CreateNode(class UEdGraphNode* InNode) const override;
 };
