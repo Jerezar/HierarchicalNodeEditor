@@ -128,7 +128,7 @@ void UHierarchicalNode_Base::SetInnerObject(UObject* InObject)
 	if (InObject->GetClass() != InnerClass) return;
 
 	InnerObject = DuplicateObject(InObject, this);
-	InnerObject->ClearFlags(EObjectFlags::RF_Standalone | EObjectFlags::RF_Public);
+	InnerObject->ClearFlags(EObjectFlags::RF_Standalone);
 	CopyPinValues(InObject);
 }
 
