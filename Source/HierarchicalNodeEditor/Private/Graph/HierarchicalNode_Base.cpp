@@ -142,6 +142,8 @@ UObject* UHierarchicalNode_Base::GetFinalizedAssetRecursive() const
 			*ObjectPointer = ChildObject;
 		}
 	}
+
+	CopyOutNamedFieldValues(OutObject);
 	
 	return OutObject;
 }
@@ -154,6 +156,7 @@ void UHierarchicalNode_Base::SetInnerObject(UObject* InObject)
 	InnerObject = DuplicateObject(InObject, this);
 	InnerObject->ClearFlags(EObjectFlags::RF_Standalone);
 	CopyPinValues(InObject);
+	CopyInNamedFieldValues(InObject);
 }
 
 //Copies values corresponding to a pin from the input object to this node's inner object. Intended to preserve FGuids after DuplicateObject calls. ClearOutPinValues should probably be called at some later point.
@@ -171,6 +174,34 @@ void UHierarchicalNode_Base::CopyPinValues(UObject* InObject) {
 
 
 		UE_LOG(LogTemp, Log, TEXT("%s copied: %d"), *(Pin->GetFName().ToString()), Prop->Identical(ValueDestination, ValueSource));
+	}
+}
+
+void UHierarchicalNode_Base::CopyInNamedFieldValues(UObject* InObject)
+{
+	for (FString FieldName : GetFieldNamesToCopy()) {
+		FProperty* Prop = InnerClass->FindPropertyByName(FName(FieldName));
+
+		if (Prop == nullptr) continue;
+
+		void* ValueDestination = Prop->ContainerPtrToValuePtr<void>(InnerObject);
+		void* ValueSource = Prop->ContainerPtrToValuePtr<void>(InObject);
+
+		Prop->CopyCompleteValue(ValueDestination, ValueSource);
+	}
+}
+
+void UHierarchicalNode_Base::CopyOutNamedFieldValues(UObject* InObject) const
+{
+	for (FString FieldName : GetFieldNamesToCopy()) {
+		FProperty* Prop = InnerClass->FindPropertyByName(FName(FieldName));
+
+		if (Prop == nullptr) continue;
+
+		void* ValueSource = Prop->ContainerPtrToValuePtr<void>(InnerObject);
+		void* ValueDestination = Prop->ContainerPtrToValuePtr<void>(InObject);
+
+		Prop->CopyCompleteValue(ValueDestination, ValueSource);
 	}
 }
 

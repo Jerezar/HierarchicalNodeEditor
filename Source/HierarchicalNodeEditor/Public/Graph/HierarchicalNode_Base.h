@@ -24,12 +24,15 @@ public:
 	virtual void SetInnerObject(UObject* InObject);
 	virtual void ClearOutPinValues();
 	virtual void CopyPinValues(UObject* InObject);
+	virtual void CopyInNamedFieldValues(UObject* InObject);
+	virtual void CopyOutNamedFieldValues(UObject* InObject) const;
 
 protected:
 	virtual void SetUpInputPins() {};
 	virtual void SetUpOutputPins();
 	virtual TArray<FString> GetFieldNamesToIgnore() const { return TArray<FString>(); }
 	virtual TArray<FString> GetFieldNamesToMakeInput() const { return TArray<FString>(); }
+	virtual TArray<FString> GetFieldNamesToCopy() const { return TArray<FString>(); }
 
 	template <typename TargetNodeClass>
 	static TargetNodeClass* GetDownstreamNode(UEdGraphPin* InPin);
