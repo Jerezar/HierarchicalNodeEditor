@@ -14,11 +14,23 @@
 #include "CraftingRecipe_Base.h"
 #include "HNE_Node_CraftingRecipeBase.h"
 
+#include "Challenge.h"
+#include "Graph/HNE_Node_Challenge.h"
+
+#include "ChallengeObjectiveBase.h"
+#include "Graph/HNE_Node_ChallengeObjectiveBase.h"
+
+#include "InheritableNamedObject.h"
+#include "Graph/HNE_Node_InheritableNamedObject.h"
+
 TMap<UClass*, UClass*> AssetClassToNodeClass{
 	{UActorState::StaticClass(), UHierarchicalStateNode::StaticClass()},
 	{UActorStateTransition::StaticClass(), UHierarchicalTransitionNode::StaticClass()},
 	{USpawnTableLink::StaticClass(), UHierarchicalTableLinkNode::StaticClass()},
-	{UCraftingRecipe_Base::StaticClass(), UHNE_Node_CraftingRecipeBase::StaticClass()}
+	{UCraftingRecipe_Base::StaticClass(), UHNE_Node_CraftingRecipeBase::StaticClass()},
+	{UChallenge::StaticClass(), UHNE_Node_Challenge::StaticClass()},
+	{UChallengeObjectiveBase::StaticClass(), UHNE_Node_ChallengeObjectiveBase::StaticClass()},
+	{UInheritableNamedObject::StaticClass(), UHNE_Node_InheritableNamedObject::StaticClass()}
 };
 
 UClass* FHNE_GraphUtils::GetNodeClassForObjectClass(UClass* InClass)
