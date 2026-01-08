@@ -11,10 +11,14 @@
 #include "SpawnTableLink.h"
 #include "Graph/HierarchicalTableLinkNode.h"
 
+#include "CraftingRecipe_Base.h"
+#include "HNE_Node_CraftingRecipeBase.h"
+
 TMap<UClass*, UClass*> AssetClassToNodeClass{
 	{UActorState::StaticClass(), UHierarchicalStateNode::StaticClass()},
 	{UActorStateTransition::StaticClass(), UHierarchicalTransitionNode::StaticClass()},
-	{USpawnTableLink::StaticClass(), UHierarchicalTableLinkNode::StaticClass()}
+	{USpawnTableLink::StaticClass(), UHierarchicalTableLinkNode::StaticClass()},
+	{UCraftingRecipe_Base::StaticClass(), UHNE_Node_CraftingRecipeBase::StaticClass()}
 };
 
 UClass* FHNE_GraphUtils::GetNodeClassForObjectClass(UClass* InClass)
