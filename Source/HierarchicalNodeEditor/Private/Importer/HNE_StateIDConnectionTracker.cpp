@@ -1,5 +1,7 @@
 #include "HNE_StateIDConnectionTracker.h"
+#include "ActorState.h"
 #include "ActorStateID.h"
+#include "Graph/HierarchicalStateNode.h"
 
 bool FHNE_StateIDConnectionTracker::RegisterValuePin(UEdGraphPin* InPin, FProperty* InProperty, void* ValuePtr)
 {
@@ -17,22 +19,24 @@ bool FHNE_StateIDConnectionTracker::RegisterValuePin(UEdGraphPin* InPin, FProper
 
     FGuid StateIDInner = StateID->Guid;
 
+    if (!StateIDInner.IsValid()) return true;
+
     TArray<UEdGraphPin*>* PinsOfID = PinsByID.Find(StateIDInner);
 
     if (PinsOfID == nullptr) {
         PinsByID.Add({ StateIDInner, TArray<UEdGraphPin*>{ InPin } });
     }
     else {
-        PinsOfID->Add(InPin);
+        PinsOfID->AddUnique(InPin);
     }
-    UE_LOG(LogTemp, Log, TEXT("Registering guid: %s"), *(StateIDInner.ToString()));
+    //UE_LOG(LogTemp, Log, TEXT("Registering guid: %s"), *(StateIDInner.ToString()));
 
     return true;
 }
 
 bool FHNE_StateIDConnectionTracker::RegisterArrayPins(TArray<UEdGraphPin*> InPins, FArrayProperty* InProperty, void* ValuePtr)
 {
-    UE_LOG(LogTemp, Log, TEXT("Registering id array: %s"), *(InProperty->GetFName().ToString()));
+    //UE_LOG(LogTemp, Log, TEXT("Registering id array: %s"), *(InProperty->GetFName().ToString()));
 
     if (InProperty == nullptr) return false;
 
@@ -50,6 +54,8 @@ bool FHNE_StateIDConnectionTracker::RegisterArrayPins(TArray<UEdGraphPin*> InPin
         FActorStateID StateID = (*StateIDs)[i];
         FGuid StateIDInner = StateID.Guid;
 
+        if (!StateIDInner.IsValid()) continue;
+
         UEdGraphPin* InPin = InPins[i];
 
         TArray<UEdGraphPin*>* PinsOfID = PinsByID.Find(StateIDInner);
@@ -58,9 +64,9 @@ bool FHNE_StateIDConnectionTracker::RegisterArrayPins(TArray<UEdGraphPin*> InPin
             PinsByID.Add({ StateIDInner, TArray<UEdGraphPin*>{ InPin } });
         }
         else {
-            PinsOfID->Add(InPin);
+            PinsOfID->AddUnique(InPin);
         }
-        UE_LOG(LogTemp, Log, TEXT("Registering guid: %s"), *(StateIDInner.ToString()));
+        //UE_LOG(LogTemp, Log, TEXT("Registering guid: %s"), *(StateIDInner.ToString()));
     }
 
     return true;
@@ -85,10 +91,6 @@ void FHNE_StateIDConnectionTracker::SetUpConnections()
 
         TArray<UEdGraphPin*> OutputPins = Pins.FilterByPredicate([](UEdGraphPin* InspectPin) {return !(InspectPin->Direction == EGPD_Input); });
 
-        if (!OutputPins.Num()) {
-            UE_LOG(LogTemp, Warning, TEXT("No connection target: %s"), *(PinsOfID.Key.ToString()));
-        }
-
         for (UEdGraphPin* Pin : OutputPins) {
             Schema->TryCreateConnection(Pin, TargetInputPin);
         }
@@ -97,9 +99,24 @@ void FHNE_StateIDConnectionTracker::SetUpConnections()
 
 void FHNE_StateIDConnectionTracker::SetErrorMessages(TArray<UEdGraphPin*> Pins, FGuid StateID)
 {
-    FString ErrorMessage = "Ambiguous StateID: " + StateID.ToString() + "\n";
-    UE_LOG(LogTemp, Warning, TEXT("%s"), *ErrorMessage);
+    TArray<UEdGraphPin*> InputPins = Pins.FilterByPredicate([](UEdGraphPin* InspectPin) {return InspectPin->Direction == EGPD_Input; });
+    TArray<FString> AffectedNameIds;
+
+    for (UEdGraphPin* InputPin : InputPins) {
+        UEdGraphNode* InspectNode = InputPin->GetOwningNode();
+        if (const UHierarchicalStateNode* InspectAsState = Cast< UHierarchicalStateNode>(InspectNode)) {
+            UActorState* InnerAsState = Cast<UActorState>(InspectAsState->GetInnerObject());
+            if (InnerAsState) {
+                AffectedNameIds.Add(InnerAsState->NameID.ToString());
+            }
+        }
+    }
+
+
+
+    UE_LOG(LogTemp, Warning, TEXT("Ambiguous StateID '%s' may refer to the following: %s (%d pins affected)"), *(StateID.ToString()), *(FString::Join(AffectedNameIds, TEXT(", "))), Pins.Num());
     for (UEdGraphPin* Pin : Pins) {
+        FString ErrorMessage = FString::Printf(TEXT("Ambiguous StateID %s on Pin %s"), *(StateID.ToString()), *(Pin->GetFName().ToString())) + "\n";
         UEdGraphNode* OwningNode = Pin->GetOwningNode();
         OwningNode->ErrorMsg += ErrorMessage;
         OwningNode->bHasCompilerMessage = true;
