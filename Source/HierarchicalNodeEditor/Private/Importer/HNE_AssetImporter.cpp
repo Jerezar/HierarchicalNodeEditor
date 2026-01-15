@@ -138,7 +138,7 @@ bool FHNE_AssetImporter::ImportObjectIntoGraph(UHierarchicalEditAsset* GraphAsse
         bool bSuccess = FHNE_AssetImporter::HandleBranchImportTask(NextImportTask, BranchTasks, BranchWrappers, ConnectionTracker);
         if (!bSuccess) {
 
-            UE_LOG(LogTemp, Log, TEXT("Failed task"));
+            UE_LOG(LogTemp, Log, TEXT("Failed task: %s.%s"), *(NextImportTask.NamePath), *(NextImportTask.FromPin->GetFName().ToString()));
         }
     }
 
@@ -265,7 +265,7 @@ bool FHNE_AssetImporter::HandleChildBranchTask(FBranchImportTask Task, TQueue<FB
     UObject** ObjectPtr = (UObject**)Task.ValuePtr;
     UObject* InObject = *ObjectPtr;
 
-    if (InObject == nullptr) return false;
+    if (InObject == nullptr) return true;
 
     FString NamePath = Task.NamePath + "." + InObject->GetFName().ToString();
 
