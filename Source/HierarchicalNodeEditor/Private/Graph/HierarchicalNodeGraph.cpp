@@ -176,6 +176,22 @@ void UHierarchicalGraphSchema::OnPinConnectionDoubleCicked(UEdGraphPin* PinA, UE
 	}
 }
 
+UEdGraphPin* UHierarchicalGraphSchema::DropPinOnNode(UEdGraphNode* InTargetNode, const FName& InSourcePinName, const FEdGraphPinType& InSourcePinType, EEdGraphPinDirection InSourcePinDirection) const
+{
+	UHierarchicalArrayNode* TargetAsArray = Cast< UHierarchicalArrayNode>(InTargetNode);
+
+	if (TargetAsArray != nullptr) {
+		return TargetAsArray->DropPin(InSourcePinName, InSourcePinType, InSourcePinDirection);
+	}
+	return nullptr;
+}
+
+bool UHierarchicalGraphSchema::SupportsDropPinOnNode(UEdGraphNode* InTargetNode, const FEdGraphPinType& InSourcePinType, EEdGraphPinDirection InSourcePinDirection, FText& OutErrorMessage) const
+{
+	UHierarchicalArrayNode* TargetAsArray = Cast< UHierarchicalArrayNode>(InTargetNode);
+	return (TargetAsArray != nullptr);
+}
+
 FNewChildNodeAction::FNewChildNodeAction()
 {
 }

@@ -100,6 +100,27 @@ void UHierarchicalArrayNode::SetNumberOfOutPins(uint32 TargetNumber)
 	}
 }
 
+UEdGraphPin* UHierarchicalArrayNode::DropPin(const FName& InSourcePinName, const FEdGraphPinType& InSourcePinType, EEdGraphPinDirection InSourcePinDirection)
+{
+	if (InSourcePinDirection != EGPD_Input || PinTypeTemplate.PinSubCategory != InSourcePinType.PinSubCategory || InSourcePinType.ContainerType == EPinContainerType::Array) return nullptr;
+
+	if (PinTypeTemplate.PinSubCategory == UHierarchicalGraphSchema::SC_ChildNode) {
+		UClass* SourceObjectClass = Cast< UClass>(InSourcePinType.PinSubCategoryObject);
+		UClass* PinTemplateObjectClass = Cast< UClass>(PinTypeTemplate.PinSubCategoryObject);
+
+		if (SourceObjectClass == nullptr) return nullptr;
+
+		if (!SourceObjectClass->IsChildOf(PinTemplateObjectClass)) return nullptr;
+	}
+
+	for (UEdGraphPin* ExistingPin : Pins) {
+		if (ExistingPin->Direction == EGPD_Output && !ExistingPin->HasAnyConnections()) return ExistingPin;
+	}
+
+	CreateOutputPin();
+	return Pins.Last();
+}
+
 bool UHierarchicalArrayNode::ShouldOverridePinNames() const
 {
 	return true;

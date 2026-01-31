@@ -27,7 +27,7 @@ public:
 	void CreateOutputPin();
 	void DeleteOutputPin();
 	void SetNumberOfOutPins(uint32 TargetNumber);
-
+	UEdGraphPin* DropPin(const FName& InSourcePinName, const FEdGraphPinType& InSourcePinType, EEdGraphPinDirection InSourcePinDirection);
 public:
 
 	FEdGraphPinType PinTypeTemplate;
