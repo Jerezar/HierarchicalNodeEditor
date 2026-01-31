@@ -86,27 +86,14 @@ void FHNE_StateIDConnectionTracker::SetUpConnections()
         }
 
         UEdGraphPin* TargetInputPin = *(InputPins.begin());
-        UEdGraphNode* TargetInputNode = TargetInputPin->GetOwningNode();
 
         const UEdGraphSchema* Schema = TargetInputPin->GetSchema();
 
         TArray<UEdGraphPin*> OutputPins = Pins.FilterByPredicate([](UEdGraphPin* InspectPin) {return !(InspectPin->Direction == EGPD_Input); });
 
-
-        TMap<UEdGraphNode*, int> NodeOffset;
-
         for (UEdGraphPin* Pin : OutputPins) {
-            UEdGraphNode* OwnerNode = Pin->GetOwningNode();
-
-            int DifferenceX = OwnerNode->NodePosX - TargetInputNode->NodePosX;
-
-            NodeOffset.Add({ OwnerNode , DifferenceX });
-
-            //Schema->TryCreateConnection(Pin, TargetInputPin);
+            Schema->TryCreateConnection(Pin, TargetInputPin);
         }
-
-        TMap<UEdGraphNode*, int> NodesAbove;
-        TMap<UEdGraphNode*, int> NodesBelow;
     }
 }
 
