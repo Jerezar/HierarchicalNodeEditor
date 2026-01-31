@@ -218,8 +218,31 @@ UEdGraphNode* FNewChildNodeAction::PerformAction(UEdGraph* ParentGraph, UEdGraph
 	Result->InitializeNode();
 
 	if (FromPin != nullptr && FromPin->Direction == EGPD_Output) {
+		UEdGraphPin* ConnectionPin = FromPin;
+
+		if (FromPin->PinType.ContainerType == EPinContainerType::Array) {
+			UHierarchicalArrayNode* NewArray = NewObject< UHierarchicalArrayNode >(ParentGraph);
+
+			NewArray->NodePosX = Location.X;
+			NewArray->NodePosY = Location.Y;
+
+			Result->NodePosX += 128;
+
+			ParentGraph->Modify();
+			ParentGraph->AddNode(NewArray, true, bSelectNewNode);
+
+			NewArray->PinTypeTemplate = FEdGraphPinType(FromPin->PinType);
+			NewArray->InitializeNode();
+			NewArray->SetNumberOfOutPins(1);
+
+			ConnectionPin = NewArray->Pins.Last();
+
+			UEdGraphPin* ArrayInputPin = NewArray->FindPin(FName("Input"), EGPD_Input);
+			ParentGraph->GetSchema()->TryCreateConnection(FromPin, ArrayInputPin);
+		}
+
 		UEdGraphPin* InputPin = Result->FindPin(FName("Parent"), EGPD_Input);
-		ParentGraph->GetSchema()->TryCreateConnection(FromPin, InputPin);
+		ParentGraph->GetSchema()->TryCreateConnection(ConnectionPin, InputPin);
 	}
 
 	return Result;
