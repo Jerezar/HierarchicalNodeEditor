@@ -86,14 +86,110 @@ void FHNE_StateIDConnectionTracker::SetUpConnections()
         }
 
         UEdGraphPin* TargetInputPin = *(InputPins.begin());
+        UHierarchicalStateNode* TargetNode = Cast< UHierarchicalStateNode>(TargetInputPin->GetOwningNode());
+
+        if (TargetNode == nullptr) {
+            UE_LOG(LogTemp, Error, TEXT("Input node for %s was not a state node. %d nodes affected."), *(PinsOfID.Key.ToString()), Pins.Num());
+            continue;
+        }
+
+        UActorState* InnerState = Cast< UActorState>(TargetNode->GetInnerObject());
+        FName NameID = InnerState->NameID;
+
+        UEdGraph* ParentGraph = TargetNode->GetGraph();
 
         const UEdGraphSchema* Schema = TargetInputPin->GetSchema();
 
         TArray<UEdGraphPin*> OutputPins = Pins.FilterByPredicate([](UEdGraphPin* InspectPin) {return !(InspectPin->Direction == EGPD_Input); });
 
+        if (!OutputPins.Num()) continue;
+
+        TSortedMap<int32, UEdGraphNode*> ReroutesByOffset;
+
         for (UEdGraphPin* Pin : OutputPins) {
-            Schema->TryCreateConnection(Pin, TargetInputPin);
+            UEdGraphNode* OwnerNode = Pin->GetOwningNode();
+            TArray<UEdGraphPin*> OwnerOutputs = OwnerNode->GetAllPins().FilterByPredicate([](UEdGraphPin* InspectPin) {return InspectPin->Direction == EGPD_Output; });
+
+            int32 OutputIndex;
+            OwnerOutputs.Find(Pin, OutputIndex);
+            ++OutputIndex;
+
+            UHNE_RerouteNode* Reroute = NewObject< UHNE_RerouteNode >(ParentGraph);
+            Reroute->NodePosX = OwnerNode->NodePosX + 256;
+            Reroute->NodePosY = OwnerNode->NodePosY + 32 * OutputIndex;
+
+            ParentGraph->Modify();
+            ParentGraph->AddNode(Reroute, true, false);
+
+            Reroute->PinTypeTemplate = FEdGraphPinType(Pin->PinType);
+            Reroute->InitializeNode();
+
+            int32 OffsetY = Reroute->NodePosY - TargetNode->NodePosY;
+
+            ReroutesByOffset.Add(OffsetY, Reroute);
+
+            UEdGraphPin* RerouteInputPin = Reroute->FindPin(NAME_None, EGPD_Input);
+
+            Schema->TryCreateConnection(Pin, RerouteInputPin);
+
+            Reroute->NodeComment = NameID.ToString();
+            Reroute->bCommentBubbleVisible = true;
         }
+
+        bool bEverSwapped = false;
+        int32 PreviousOffset = 0;
+        UEdGraphNode* PreviousNode = nullptr;
+        for (TPair<int32, UEdGraphNode*> Entry : ReroutesByOffset) {
+            UEdGraphNode* CurrentReroute = Entry.Value;
+
+            bool bIsAbove = Entry.Key < 0;
+
+            bool bSwappedFromAboveToBelow = (PreviousOffset < 0) && !bIsAbove;
+            bEverSwapped |= bSwappedFromAboveToBelow;
+
+            if (bSwappedFromAboveToBelow) {
+                //Connect previous node to target pin
+                Schema->TryCreateConnection(TargetInputPin, PreviousNode->FindPin(NAME_None, EGPD_Output));
+                PreviousNode = nullptr;
+
+                //Also connect new node to target pin
+                Schema->TryCreateConnection(TargetInputPin, CurrentReroute->FindPin(NAME_None, EGPD_Output));
+            }
+
+            if (PreviousNode != nullptr) {
+                //Connect current node with previous node
+
+                Schema->TryCreateConnection(
+                    PreviousNode->FindPin(NAME_None, (bIsAbove ? EGPD_Output : EGPD_Input)),
+                    CurrentReroute->FindPin(NAME_None, (bIsAbove ? EGPD_Input : EGPD_Output))
+                );
+            }
+
+            PreviousNode = CurrentReroute;
+            PreviousOffset = Entry.Key;
+        }
+
+        if (!bEverSwapped) {
+            TArray<int32> Keys;
+            ReroutesByOffset.GetKeys(Keys);
+            bool bPurelyAbove = (PreviousOffset < 0);
+
+            int32 RerouteKey = bPurelyAbove ? Keys.Last() : (*Keys.begin());
+
+            UEdGraphNode** Reroute = ReroutesByOffset.Find(RerouteKey);
+
+            if (Reroute == nullptr) {
+                UE_LOG(LogTemp, Error, TEXT("Cannot find reroute node of correct offset, despite just making it."))
+            }
+            else {
+                Schema->TryCreateConnection(
+                    TargetInputPin,
+                    (*Reroute)->FindPin(NAME_None, EGPD_Output)
+                );
+                
+            }
+        }
+        
     }
 }
 
