@@ -38,6 +38,10 @@ protected:
 	void DeleteGraphAction();
 	bool CanDeleteGraphAction();
 
+
+	void CopyGraphAction();
+	void PasteGraphAction();
+
 public:
 	static const FName CustomAppIdentifier;
 

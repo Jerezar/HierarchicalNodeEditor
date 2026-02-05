@@ -47,7 +47,12 @@ public class HierarchicalNodeEditor : ModuleRules
 
                 "ClassViewer",
 
-				"GraphEditor"
+				"GraphEditor",
+
+                "ApplicationCore",
+				"Json",
+				"JsonUtilities",
+				"JsonSerialization"
             }
 			);
 		

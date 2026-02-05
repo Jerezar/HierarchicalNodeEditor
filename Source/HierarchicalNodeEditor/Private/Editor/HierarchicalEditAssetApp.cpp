@@ -3,8 +3,14 @@
 
 #include "Editor/HierarchicalEditAssetApp.h"
 #include "Editor/HierarchicalEditorAppMode.h"
+#include "Editor/HNE_NodeSerializer.h"
 #include "Graph/HierarchicalNode_Base.h"
+#include "Graph/HierarchicalArrayNode.h"
+#include "Graph/HNE_RerouteNode.h"
+
+#include "HAL/PlatformApplicationMisc.h"
 #include "GenericCommands.h"
+
 
 void FHierarchicalEditAssetApp::RegisterTabSpawners(const TSharedRef<class FTabManager>& TabManager)
 {
@@ -38,6 +44,14 @@ void FHierarchicalEditAssetApp::InitEditor(const EToolkitMode::Type Mode, const 
 	ToolkitCommands->MapAction(FGenericCommands::Get().Delete,
 		FExecuteAction::CreateSP(this, &FHierarchicalEditAssetApp::DeleteGraphAction),
 		FCanExecuteAction::CreateSP(this, &FHierarchicalEditAssetApp::CanDeleteGraphAction)
+	);
+
+	ToolkitCommands->MapAction(FGenericCommands::Get().Copy,
+		FExecuteAction::CreateSP(this, &FHierarchicalEditAssetApp::CopyGraphAction)
+	);
+
+	ToolkitCommands->MapAction(FGenericCommands::Get().Paste,
+		FExecuteAction::CreateSP(this, &FHierarchicalEditAssetApp::PasteGraphAction)
 	);
 }
 
@@ -100,4 +114,42 @@ bool FHierarchicalEditAssetApp::CanDeleteGraphAction()
 {
 	TSharedPtr<SDockTab> Tab = GetTabManager()->GetOwnerTab();
 	return Tab->IsForeground();
+}
+
+void FHierarchicalEditAssetApp::CopyGraphAction()
+{
+	UE_LOG(LogTemp, Log, TEXT("Tried to copy"));
+	if (!_WorkingGraphUI.IsValid()) return;
+
+	FGraphPanelSelectionSet SelectedNodes = _WorkingGraphUI->GetSelectedNodes();
+	TArray<UEdGraphNode*> SelectedNodesOrdered;
+
+	for (UObject* SelectedObject : SelectedNodes) {
+		UEdGraphNode* Node = Cast< UEdGraphNode>(SelectedObject);
+		if (!(Node != nullptr && UHNE_NodeSerializer::CanSerializeNode(Node))) continue;
+
+		SelectedNodesOrdered.Add(Node);
+	}
+
+	if (!SelectedNodesOrdered.Num()) return;
+
+	FString Text;
+	
+	if (UHNE_NodeSerializer::SerializeNodesToString(SelectedNodesOrdered, Text)){
+		FPlatformApplicationMisc::ClipboardCopy(*Text);
+	}
+	
+}
+
+void FHierarchicalEditAssetApp::PasteGraphAction()
+{
+	UE_LOG(LogTemp, Log, TEXT("Tried to paste"));
+	if (!_WorkingGraphUI.IsValid()) return;
+
+	FString Text;
+	FPlatformApplicationMisc::ClipboardPaste(Text);
+	
+	FVector2D PasteLocation = _WorkingGraphUI->GetPasteLocation();
+
+	UHNE_NodeSerializer::DeserializeNodesFromString(Text, GetWorkingGraph(), PasteLocation);
 }
