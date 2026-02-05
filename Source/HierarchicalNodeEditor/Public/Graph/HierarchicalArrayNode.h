@@ -30,6 +30,7 @@ public:
 	UEdGraphPin* DropPin(const FName& InSourcePinName, const FEdGraphPinType& InSourcePinType, EEdGraphPinDirection InSourcePinDirection);
 public:
 
+	UPROPERTY()
 	FEdGraphPinType PinTypeTemplate;
 
 	FUIAction CreatePinUIAction;

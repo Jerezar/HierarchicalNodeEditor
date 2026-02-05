@@ -24,5 +24,6 @@ public:
 	virtual void InitializeNode() override;
 
 public:
+	UPROPERTY()
 	FEdGraphPinType PinTypeTemplate;
 };
