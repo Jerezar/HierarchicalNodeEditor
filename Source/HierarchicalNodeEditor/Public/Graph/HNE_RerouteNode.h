@@ -8,6 +8,9 @@ class UHNE_RerouteNode : public UHNE_Node
 {
 	GENERATED_BODY()
 
+public: //UObject
+	virtual void PostLoad() override;
+
 public: // UEdGraphNode
 	virtual FText GetNodeTitle(ENodeTitleType::Type TitelType) const override { return FText(); }
 	virtual FLinearColor GetNodeTitleColor() const override { return FLinearColor(0, 0, 0, 0); }

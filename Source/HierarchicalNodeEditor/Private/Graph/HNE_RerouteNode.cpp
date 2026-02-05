@@ -19,6 +19,16 @@ void UHNE_RerouteNode::InitializeNode()
 	);
 }
 
+void UHNE_RerouteNode::PostLoad()
+{
+	if (PinTypeTemplate.PinSubCategory == NAME_None) {
+		UEdGraphPin* InputPin = FindPin(TEXT("Input"), EGPD_Input);
+		if (InputPin) PinTypeTemplate = FEdGraphPinType(InputPin->PinType);
+		Modify();
+	}
+	Super::PostLoad();
+}
+
 bool UHNE_RerouteNode::ShouldOverridePinNames() const
 {
 	return true;
