@@ -16,6 +16,16 @@ UHierarchicalArrayNode::UHierarchicalArrayNode() : UHNE_Node()
 	);
 }
 
+void UHierarchicalArrayNode::PostLoad()
+{
+	if (PinTypeTemplate.PinSubCategory == NAME_None) {
+		UEdGraphPin* InputPin = FindPin(TEXT("Input"), EGPD_Input);
+		if (InputPin) PinTypeTemplate = FEdGraphPinType(InputPin->PinType);
+		Modify();
+	}
+	Super::PostLoad();
+}
+
 void UHierarchicalArrayNode::GetNodeContextMenuActions(UToolMenu* Menu, UGraphNodeContextMenuContext* Context) const
 {
 	UHNE_Node::GetNodeContextMenuActions(Menu, Context);
