@@ -137,11 +137,14 @@ UObject* UHierarchicalStateNode::GetFinalizedAssetRecursive() const
 
 			UHierarchicalStateNode* ChildNode = GetDownstreamNode< UHierarchicalStateNode>(Pin);
 
-			FActorStateID* StateIDPointer = Property->ContainerPtrToValuePtr<FActorStateID>(OutObject);
+			if (ChildNode) {
 
-			UActorState* StateObject = Cast< UActorState>(ChildNode->GetInnerObject());
+				FActorStateID* StateIDPointer = Property->ContainerPtrToValuePtr<FActorStateID>(OutObject);
 
-			*StateIDPointer = StateObject->UniqueId;
+				UActorState* StateObject = Cast< UActorState>(ChildNode->GetInnerObject());
+
+				*StateIDPointer = StateObject->UniqueId;
+			}
 		}
 	}
 
