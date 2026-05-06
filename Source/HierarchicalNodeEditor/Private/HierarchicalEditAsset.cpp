@@ -122,6 +122,16 @@ void UHierarchicalEditAsset::CompileGraphToAsset()
 
 }
 
+void UHierarchicalEditAsset::RefreshNodeGuids()
+{
+	TArray<UHierarchicalNode_Base*> HierarchicalNodes;
+	WorkingGraph->GetNodesOfClass<UHierarchicalNode_Base>(HierarchicalNodes);
+
+	for (UHierarchicalNode_Base* Node : HierarchicalNodes) {
+		Node->RefreshGuids();
+	}
+}
+
 bool UHierarchicalEditAsset::ValidateInputPins(UEdGraph* Graph) {
 	UE_LOG(LogTemp, Log, TEXT("Validating hierarchical graph"));
 

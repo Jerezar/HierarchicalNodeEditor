@@ -205,7 +205,6 @@ void UHierarchicalNode_Base::CopyOutNamedFieldValues(UObject* InObject) const
 	}
 }
 
-
 //Clears all FProperty values of the inner object that correspond to the output pins of this node.
 void UHierarchicalNode_Base::ClearOutPinValues(){
 	TArray<UEdGraphPin*> OutputPins = Pins.FilterByPredicate([](UEdGraphPin* InspectPin) {return InspectPin->Direction == EGPD_Output; });

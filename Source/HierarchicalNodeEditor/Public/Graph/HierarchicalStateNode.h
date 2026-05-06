@@ -14,6 +14,7 @@ public:
 
 public:
 	virtual UObject* GetFinalizedAssetRecursive() const override;
+	virtual void RefreshGuids() override;
 
 protected:
 	virtual void SetUpInputPins() override;

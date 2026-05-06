@@ -27,5 +27,6 @@ public:
 
 public:
 	void CompileGraphToAsset();
+	void RefreshNodeGuids();
 	bool ValidateInputPins(UEdGraph* Graph);
 };

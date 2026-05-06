@@ -147,3 +147,12 @@ UObject* UHierarchicalStateNode::GetFinalizedAssetRecursive() const
 
 	return OutObject;
 }
+
+void UHierarchicalStateNode::RefreshGuids()
+{
+	Super::RefreshGuids();
+	UActorState* Inner = Cast<UActorState>(GetInnerObject());
+	Inner->UniqueId.Guid = FGuid::NewGuid();
+	Inner->Modify();
+	Modify();
+}

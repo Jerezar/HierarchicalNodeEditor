@@ -64,7 +64,7 @@ void FHierarchicalEditorAppMode::FillToolbar(FToolBarBuilder& ToolbarBuilder)
 		FUIAction(
 			FExecuteAction::CreateLambda(
 				[this]() {
-					UE_LOG(LogTemp, Warning, TEXT("Button press"));
+					UE_LOG(LogTemp, Warning, TEXT("Button press: Compile"));
 					if ( !(this->_App.IsValid()) ) return;
 					TSharedPtr<FHierarchicalEditAssetApp> PinnedApp = _App.Pin();
 					UHierarchicalEditAsset* WorkingAsset = PinnedApp->GetWorkingAsset();
@@ -81,7 +81,7 @@ void FHierarchicalEditorAppMode::FillToolbar(FToolBarBuilder& ToolbarBuilder)
 		FUIAction(
 			FExecuteAction::CreateLambda(
 				[this]() {
-					UE_LOG(LogTemp, Warning, TEXT("Button press"));
+					UE_LOG(LogTemp, Warning, TEXT("Button press: Import"));
 					if (!(this->_App.IsValid())) return;
 					TSharedPtr<FHierarchicalEditAssetApp> PinnedApp = _App.Pin();
 
@@ -115,6 +115,23 @@ void FHierarchicalEditorAppMode::FillToolbar(FToolBarBuilder& ToolbarBuilder)
 		NAME_None,
 		FText::FromString(TEXT("Import")),
 		FText::FromString(TEXT("Overwrites the current graph with one created "))
+	);
+
+	ToolbarBuilder.AddToolBarButton(
+		FUIAction(
+			FExecuteAction::CreateLambda(
+				[this]() {
+					UE_LOG(LogTemp, Warning, TEXT("Button press: GUID Refresh"));
+					if (!(this->_App.IsValid())) return;
+					TSharedPtr<FHierarchicalEditAssetApp> PinnedApp = _App.Pin();
+					UHierarchicalEditAsset* WorkingAsset = PinnedApp->GetWorkingAsset();
+					WorkingAsset->RefreshNodeGuids();
+				}
+			)
+		),
+		NAME_None,
+		FText::FromString(TEXT("Refresh GUIDs")),
+		FText::FromString(TEXT("Prompts all nodes to refresh any GUID properties."))
 	);
 }
 

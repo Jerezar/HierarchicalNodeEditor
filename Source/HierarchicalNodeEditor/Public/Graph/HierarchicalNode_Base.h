@@ -26,6 +26,7 @@ public:
 	virtual void CopyPinValues(UObject* InObject);
 	virtual void CopyInNamedFieldValues(UObject* InObject);
 	virtual void CopyOutNamedFieldValues(UObject* InObject) const;
+	virtual void RefreshGuids() {};
 
 protected:
 	virtual void SetUpInputPins() {};
